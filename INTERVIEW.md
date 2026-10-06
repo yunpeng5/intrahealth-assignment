@@ -156,6 +156,11 @@ protected, with a correct fake implementation and deliberate leaks:
   (now run with `npm --prefix harness`).
 - Asked for platform-aware process termination to be confirmed rather than assumed, and for the
   review record to match the actual review comment.
+- Rejected steering the T2 maker toward immutable collections just to satisfy the protected
+  source scan. A static scan cannot tell a questionnaire-definition registry from a store of
+  answers, so its in-memory and in-process-cache rules were constraining implementation beyond
+  the requirement. They were removed before T2 (PR #10, a reviewed change to a protected test);
+  in-memory visitor state is now left to review.
 
 ## Run observations
 
@@ -185,8 +190,9 @@ protected, with a correct fake implementation and deliberate leaks:
   the `Pending` trait removal is checked by review, not mechanically (D-13).
 
 **Invariant tests**
-- The source scan is heuristic (known patterns, not exhaustive); in-memory state is otherwise
-  covered only by review.
+- The source scan is heuristic (known patterns, not exhaustive). In-memory visitor state (a
+  static collection of answers, an in-process cache of results) is not detected by any test;
+  only review covers it.
 - Score checks use WC-6 values (13, partial 15); the file check covers the app's directories,
   not the whole disk, and can fail spuriously if a build runs during the tests.
 
