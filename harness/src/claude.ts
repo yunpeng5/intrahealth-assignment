@@ -78,6 +78,8 @@ export function runClaude(o: CallOptions): Promise<CallResult> {
     "--permission-prompts", "none",
     // CLAUDE.md and the project's .claude/settings.json, but not per-user settings.
     "--setting-sources", "project",
+    // Only MCP servers from --mcp-config, which the harness never passes: none.
+    "--strict-mcp-config",
     "--tools", o.tools.join(","),
     "--allowedTools", ...o.allowedTools,
   ];

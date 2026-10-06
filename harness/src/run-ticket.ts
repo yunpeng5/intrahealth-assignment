@@ -10,13 +10,17 @@ import { tryRun } from "./proc.ts";
 import { blockingFindings, renderReview, ReviewInvalidError, runReview, type Review } from "./review.ts";
 import { loadTicket, serializeTicket, TicketError, type Ticket } from "./ticket.ts";
 
-const MAKER_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Bash"];
-const MAKER_ALLOWED = [
+export const MAKER_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Bash"];
+export const MAKER_ALLOWED = [
   "Read", "Edit", "Write", "Glob", "Grep",
   "Bash(npm *)", "Bash(npx *)", "Bash(dotnet *)", "Bash(node *)",
   "Bash(git status*)", "Bash(git diff*)",
 ];
-const MAKER_DENIED = ["Bash(git commit*)", "Bash(git push*)", "Bash(gh *)", "WebFetch", "WebSearch"];
+export const MAKER_DENIED = [
+  "Bash(git commit*)", "Bash(git push*)", "Bash(gh *)", "WebFetch", "WebSearch",
+  // Keep the maker from changing its own permissions, hooks or MCP servers.
+  "Edit(.claude/**)", "Write(.claude/**)", "Edit(.mcp.json)", "Write(.mcp.json)",
+];
 
 interface AttemptRecord {
   loop: string;
@@ -425,10 +429,12 @@ async function main(): Promise<number> {
   return r.prUrl ? 0 : 1;
 }
 
-main().then(
-  (code) => process.exit(code),
-  (err) => {
-    console.error(`run-ticket: ${err.message}`);
-    process.exit(1);
-  },
-);
+if (import.meta.main) {
+  main().then(
+    (code) => process.exit(code),
+    (err) => {
+      console.error(`run-ticket: ${err.message}`);
+      process.exit(1);
+    },
+  );
+}
