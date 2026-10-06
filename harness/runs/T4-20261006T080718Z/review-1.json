@@ -1,0 +1,77 @@
+{
+  "verdict": "request-changes",
+  "requirements": [
+    {
+      "id": "1.4",
+      "status": "met",
+      "evidence": "frontend/src/QuestionnairePages.tsx:18 computes pageComplete; :54 disables Next until complete; :49 Back button decrements pageIndex while `answers` state (:13) is untouched, so earlier selections stay checked (:40). Covered by 'blocks moving forward…' and 'keeps earlier answers when moving back' tests."
+    },
+    {
+      "id": "1.5",
+      "status": "met",
+      "evidence": "frontend/src/QuestionnairePages.tsx:29-31 renders 'Page {pageIndex + 1} of {pageCount}' on every page; asserted per page in QuestionnaireView.test.tsx 'shows the correct progress on each page'."
+    },
+    {
+      "id": "2.1",
+      "status": "not-met",
+      "evidence": "The paged flow exists (QuestionnaireView.tsx, QuestionnairePages.tsx) but nothing renders it: frontend/src/App.tsx:1-9 still shows only the 'Pulse Check' heading and main.tsx renders App. A visitor opening the app cannot move through any pages."
+    },
+    {
+      "id": "D-1",
+      "status": "met",
+      "evidence": "frontend/src/questionnaire.ts:3-25 types carry id/title/instructions/prompt/label only, matching backend QuestionnaireView.cs records; no values, bands or scoring anywhere in frontend/src."
+    },
+    {
+      "id": "D-3",
+      "status": "met",
+      "evidence": "Single fetch in QuestionnaireView.tsx:15-25 (useEffect with [] deps); QuestionnairePages.tsx has no network code. Test 'makes no network calls … while moving between pages' asserts fetchMock called once after navigating."
+    },
+    {
+      "id": "D-4",
+      "status": "met",
+      "evidence": "Answers held in useState (QuestionnairePages.tsx:13). No localStorage/sessionStorage/cookie/URL writes in frontend/src; test asserts storage empty, cookie empty and URL unchanged after paging."
+    },
+    {
+      "id": "D-9",
+      "status": "met",
+      "evidence": "frontend/src/questionnaire.ts:30-36 reads ?questionnaire=<id>, falls back to 'wc-6'; QuestionnaireView.tsx:17 passes window.location.search. Tests cover default and named ID."
+    },
+    {
+      "id": "D-15",
+      "status": "met",
+      "evidence": "QuestionnairePages.tsx:54 `disabled={!pageComplete}`; no unanswered-question hints are shown. Test clicks disabled Next and asserts page did not change."
+    },
+    {
+      "id": "T-1",
+      "status": "n/a",
+      "evidence": "No back-end change; no client-facing response is produced or altered by this PR. Front-end types accept no score field."
+    },
+    {
+      "id": "T-2",
+      "status": "n/a",
+      "evidence": "No back-end change; the PR only adds front-end files and a docs paragraph."
+    },
+    {
+      "id": "D-7",
+      "status": "n/a",
+      "evidence": "No server code touched; nothing about the questionnaire is sent to the server while paging (D-3 evidence above)."
+    },
+    {
+      "id": "D-8",
+      "status": "n/a",
+      "evidence": "No server code touched; the front end has no score field, logic or display."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "blocking",
+      "category": "requirement",
+      "file": "frontend/src/App.tsx",
+      "line": 3,
+      "requirement": "2.1",
+      "summary": "The new questionnaire flow is never mounted, so the app still shows only the heading and a visitor cannot load or page through a questionnaire.",
+      "evidence": "App.tsx:1-9 renders `<main><h1>Pulse Check</h1></main>` and main.tsx renders App. Grep for QuestionnaireView finds it only in its own file and its test. The ticket's Loading behaviour ('the app loads the questionnaire named by ?questionnaire=…') and Goal ('A visitor can move through a questionnaire's pages') are unmet in the running app; the acceptance tests pass only because they render QuestionnaireView directly.",
+      "suggestion": "Render `<QuestionnaireView />` inside `<main>` in App.tsx (allowed path frontend/**). Update App.test.tsx to stub fetch (or assert the error alert) so it stays green, and add one assertion that App shows the loaded questionnaire title so the wiring is covered."
+    }
+  ]
+}
