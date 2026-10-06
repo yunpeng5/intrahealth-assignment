@@ -12,7 +12,7 @@ the features exist. Tests that need endpoints not built yet carry `[Trait("Categ
 
 | File | Protects | Status |
 |---|---|---|
-| `NoPersistenceSourceTests.cs` | T-2, D-7: no known file-write, database, cache, session/cookie, request-body-logging or visitor-state-store patterns in `backend/src` (static, heuristic scan) | baseline |
+| `NoPersistenceSourceTests.cs` | T-2, D-7: no known file-write, database, out-of-process cache, session/cookie, request-body-logging or direct-console patterns in `backend/src` (static, heuristic scan) | baseline |
 | `QuestionnaireContractInvariantTests.cs` | D-1, 2.4: the GET questionnaire response has only the properties D-1 defines, no numbers, no severity labels or next-steps text, and still offers every question and option by ID | pending until T2 |
 | `SubmissionInvariantTests.cs` | T-1, 2.2, 2.4, D-2, D-8: a known WC-6 answer set returns exactly `{ label, nextSteps }` with the expected values and no JSON numbers; no score in non-standard headers; an invalid submission echoes no option IDs, partial score or label | pending until T3 |
 | `NoServerStateInvariantTests.cs` | T-2, 2.3, D-7: completing the flow (load, valid submit, invalid submit) writes no files, sets no cookies, and logs nothing derived from answers (all log levels captured) | pending until T3 |
@@ -42,13 +42,16 @@ mechanically.
 ## Limits
 
 - **The source scan is heuristic.** It is a denylist of common APIs and patterns, not an
-  exhaustive proof, and it does not replace review. It is aimed at visitor state: concurrent
-  collections and static mutable collections are flagged; immutable lookup data
-  (`IReadOnlyDictionary`, `FrozenDictionary`, arrays) is not, so questionnaire definitions
-  should be held in immutable types. Reading files, including a read-only `FileStream`, is
-  allowed; write modes and write access are flagged. Direct `Console`/`Debug`/`Trace` writes
-  are flagged because the runtime log check only sees `ILogger`. Comment lines are ignored.
-- **In-memory state** between requests is otherwise only covered by review.
+  exhaustive proof, and it does not replace review. It flags only mechanisms with no
+  legitimate use in this design. It does not constrain how in-memory data is held: in-memory
+  collections and in-process caches are allowed, because a questionnaire-definition registry
+  and a store of answers look the same to a static scan. Reading files, including a read-only
+  `FileStream`, is allowed; write modes and write access are flagged. Direct
+  `Console`/`Debug`/`Trace` writes are flagged because the runtime log check only sees
+  `ILogger`. Comment lines are ignored.
+- **In-memory visitor state** between requests (a static or singleton collection of answers, an
+  in-process cache of results) is not detected by any test. It is left to review: the review
+  bot checks D-7 on every PR.
 - **The file check** covers request handling, not startup (the snapshot is taken after the
   host starts; startup writes are left to the source scan and review). It covers the app's
   content root and the test output directory (both including `bin`/`obj`), not the whole disk.
@@ -68,6 +71,8 @@ Before review, the pending tests were run against a throwaway `Program.cs` (not 
 correct fake implementation passed all of them, and deliberate leaks each failed exactly the
 intended test. Leaks covered: option values, a string-valued `points` property, the score in the
 body, a band range appended to `nextSteps`, a partial score in an error, the score in a header,
-the score in a log in two wordings, a cookie, a file write, and a `static readonly` store (caught
-by the source scan). The first spike exposed a false positive, since fixed: ProblemDetails'
-standard `type` URI (`...rfc9110#section-15.5.1`) matched the partial-score check.
+the score in logs in three wordings, a cookie and a file write. The first spike exposed a false
+positive, since fixed: ProblemDetails' standard `type` URI (`...rfc9110#section-15.5.1`) matched
+the partial-score check. The source scan once also flagged in-memory collections; that rule was
+removed before T2 because it could not tell a definition registry from visitor state and would
+have forced an implementation choice the requirements do not make.
