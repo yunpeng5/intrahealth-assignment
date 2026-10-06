@@ -100,7 +100,7 @@ Notes on the metrics:
 
 | #9 invariant tests | 1 | approve | 4 should-fix, 2 nit | `static readonly` stores missed by the source scan; log check missed "scored 13" wording; GET check was a denylist (a string `points` property passed); database/file denylist incomplete and case-sensitive | **Partly wrong:** said the WC-6 question IDs are "defined nowhere"; they are in Issue #2, which the bot cannot see (the underlying gap, an undocumented default-configuration assumption, was real). **Would have weakened a test:** suggested skipping `bin`/`obj` in the file snapshot, but the test output folder is a `bin` folder and the likeliest leak location. **Missed:** a band range added as text (`"10 to 14: ..."`) passed every check. Note: the review ticket pointed the bot at the scan and score checks. |
 | #9 invariant tests | 2 (after fix round) | approve | 3 should-fix, 3 nit | Two false-positive risks that the leak spike could not show: the log check also scans startup lines and exception stack traces (`:line 13`, machine-specific paths), and the file rule flags a read-only `new FileStream` for loading definitions (D-5). Also: `Console`/`Debug` writes escape both log capture and the source scan; startup file writes are not covered. | **Repeated the partly-wrong ID finding:** said nothing T2 reads states the WC-6 IDs; Issue #2 lists them. _Outcome:_ both false-positive risks and the Console gap were fixed before the tests were protected, verified by a targeted spike rather than a third review pass. |
-| #10 narrow source scan | 1 | approve | 1 should-fix, 1 nit | A Redis-backed output cache (`AddStackExchangeRedisOutputCache`) slipped through the narrowed distributed-cache pattern; the test comment did not say in-memory visitor state is undetected by any test | _Outcome: pending merge decision._ |
+| #10 narrow source scan | 1 | approve | 1 should-fix, 1 nit | A Redis-backed output cache (`AddStackExchangeRedisOutputCache`) slipped through the narrowed distributed-cache pattern; the test comment did not say in-memory visitor state is undetected by any test | _Outcome:_ the suggested fix (widen the Redis pattern) was rejected: it would have expanded a technology denylist. The scan was narrowed further instead. |
 
 _Calibration on planted bugs in a feature PR: pending (after T3)._
 
@@ -158,10 +158,12 @@ protected, with a correct fake implementation and deliberate leaks:
 - Asked for platform-aware process termination to be confirmed rather than assumed, and for the
   review record to match the actual review comment.
 - Rejected steering the T2 maker toward immutable collections just to satisfy the protected
-  source scan. A static scan cannot tell a questionnaire-definition registry from a store of
-  answers, so its in-memory and in-process-cache rules were constraining implementation beyond
-  the requirement. They were removed before T2 (PR #10, a reviewed change to a protected test);
-  in-memory visitor state is now left to review.
+  source scan, and then rejected the review bot's suggestion to widen a Redis pattern. A static
+  scan cannot tell a questionnaire-definition registry from a store of answers, and rules on
+  caches, logging middleware or console output ban technologies and channels rather than
+  visitor state. Before T2 the scan was narrowed to what maps directly to the requirements:
+  file writes and databases (T-2), sessions and cookies (2.3) (PR #10, a reviewed change to a
+  protected test). Everything else is explicitly left to review.
 
 ## Run observations
 
@@ -191,9 +193,10 @@ protected, with a correct fake implementation and deliberate leaks:
   the `Pending` trait removal is checked by review, not mechanically (D-13).
 
 **Invariant tests**
-- The source scan is heuristic (known patterns, not exhaustive). In-memory visitor state (a
-  static collection of answers, an in-process cache of results) is not detected by any test;
-  only review covers it.
+- The source scan covers only file writes, databases, sessions and cookies, and is a list of
+  known APIs, not exhaustive. Not detected by any test, left to D-7 review: in-memory visitor
+  state (a static collection of answers, a cache of results), direct `Console`/`Debug`/`Trace`
+  output, and persistence mechanisms the list does not name.
 - Score checks use WC-6 values (13, partial 15); the file check covers the app's directories,
   not the whole disk, and can fail spuriously if a build runs during the tests.
 
