@@ -28,7 +28,7 @@ deterministic replay, a separate replay command.
 
 ```
 harness/
-  package.json            scripts: ticket, review, metrics, typecheck
+  package.json            scripts: ticket, review, metrics, test, typecheck
   config.json             models, limits (below)
   protected-paths.txt     protected test paths (D-13); empty until the invariant tests exist
   prompts/
@@ -44,6 +44,7 @@ harness/
     metrics.ts            aggregate run records into a markdown table
     git.ts / gh.ts        thin wrappers
     proc.ts / config.ts   process helpers (run, shell with timeout, kill tree); paths and config
+  test/                   node:test unit tests: ticket parsing, failure signature, review validation
   runs/<run-id>/          one directory per run (see "Run record")
   README.md               how to use the harness
 ```
@@ -123,11 +124,16 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
      - `npm`, `npx`, `dotnet`, `node`
      - read-only `git` commands (`git status`, `git diff`)
    - Denied: `git commit`, `git push`, `gh`, network fetches. The harness owns git and GitHub.
+     Also denied: edits to `.claude/**` and `.mcp.json` (`Edit(...)`/`Write(...)` rules), and
+     no MCP servers are loaded (`--strict-mcp-config` with no `--mcp-config`), so the maker
+     cannot change its own permissions, hooks or tools. This is workflow containment, not a
+     security boundary: allowed `node`/`npm`/`npx` execution can get around it.
    - The harness enforces a wall-clock timeout by killing the process.
    - Exact flag names are checked against `claude --help`, not assumed.
    - As built (CLI 2.1.290): `claude -p --output-format stream-json --verbose --model <m>
      --max-turns <n> --permission-mode acceptEdits --permission-prompts none
-     --setting-sources project --tools Read,Edit,Write,Glob,Grep,Bash --allowedTools ...
+     --setting-sources project --strict-mcp-config --tools Read,Edit,Write,Glob,Grep,Bash
+     --allowedTools ...
      --disallowedTools ...`, with the prompt on stdin. `--max-turns` is not listed in
      `claude --help` but is accepted and enforced (result subtype `error_max_turns`).
      `--tools` removes every other built-in tool (including PowerShell and web tools).
@@ -150,6 +156,9 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
 6. **Retry.** On a gate failure:
    - Build feedback from `prompts/feedback.md`: which gate, the command, the last N lines of
      output, and what to do. For a scope failure, the feedback is "revert changes to X".
+     If the maker call before it ended with anything other than `success` (`timeout`,
+     `error_max_turns`, ...), the feedback says the maker was cut off and must finish the work
+     and re-summarize.
    - Resume the same maker session (`--resume <session-id>`) and send the feedback into it. The
      maker keeps its context; only the reviewer needs fresh context.
    - **Stop** when attempts reach `maxAttempts`, or when the failure signature (gate + hash of
@@ -167,10 +176,12 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
    - If the verdict is `request-changes` and revision rounds remain, feed the blocking findings
      back to the maker (resume), re-run the gates, push, and re-review. The revision gets its
      own gate-retry loop with a fresh `maxAttempts` budget. If that loop stops, the revision is
-     not pushed and the run ends with `revision-max-attempts` or `revision-no-progress`.
+     not pushed and the run ends with `revision-max-attempts`, `revision-no-progress` or
+     `revision-maker-error`.
    - After that, stop either way. A human decides.
    - Stop reasons: `approved`, `changes-requested`, `max-attempts`, `no-progress`,
-     `maker-error`, `review-invalid`, `revision-max-attempts`, `revision-no-progress`, `error`.
+     `maker-error`, `review-invalid`, `revision-max-attempts`, `revision-no-progress`,
+     `revision-maker-error`, `error`.
 9. **Write the run record.**
    - Write the committed files (below) and commit them to the PR branch as
      `T<n>: run record`.
@@ -188,9 +199,11 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
   tools only (read and search, no shell, no edits), so it can open files beyond the diff.
   As built: `--tools Read,Glob,Grep --permission-mode dontAsk --json-schema <review schema>`,
   same settings sources as the maker. Requirements and decisions are pasted into the prompt;
-  `CLAUDE.md` is loaded automatically. The diff excludes `harness/runs/` and
-  `package-lock.json` files (they still appear in the diff stat) and is cut at 300,000
-  characters with a note telling the reviewer to read the rest directly.
+  `CLAUDE.md` is loaded automatically. The diff excludes `harness/runs/` and every
+  `package-lock.json`, at the root and in subdirectories (they still appear in the diff
+  stat). It is cut at 300,000 characters with a note telling the reviewer to read the rest
+  directly; a cut is also stated under the header of the rendered review and recorded per
+  round in `run.json` (`reviewDiffTruncated`).
 - **Standalone `review`:** needs a clean tree; checks out the PR (`gh pr checkout`) or branch,
   reviews it against `origin/<base>`, posts to the PR if there is one (unless `--no-post`), and
   switches back. The ticket comes from `--ticket-file` or `Closes #<n>` in the PR body. Output
@@ -209,7 +222,8 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
      authorizing ticket is a finding.
   6. Test quality: do the tests assert the behaviour, and could they fail?
   7. Correctness, then maintainability.
-- **Output:** JSON validated by the harness. Invalid JSON gets one retry, then the run fails.
+- **Output:** JSON validated by the harness. Invalid output gets one retry; if it is still
+  invalid, the run stops with `review-invalid`.
 
   ```json
   {
@@ -232,9 +246,9 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
   every global invariant has an entry in `requirements`. On failure it resumes the reviewer
   session once with the list of problems.
 - **Publishing:**
-  - Render to `review.md`.
+  - Render to `review-<round>.md`.
   - Post it with `gh pr comment`. GitHub doesn't let you "request changes" on your own PR.
-  - Save `review.json` and `review.md` in the run record.
+  - Save `review-<round>.json` and `review-<round>.md` in the run record.
 - The reviewer prompt lives only in `harness/prompts/reviewer.md`.
 
 ## Run record
@@ -272,7 +286,7 @@ call's cost as the difference from the session's previous total.
   (`harness/runs/review-*/`) and `harness/node_modules/`.
 - **`.gitattributes`:** `* text=auto eol=lf`, so line endings stay stable on Windows.
 - **`.claude/settings.json`:** permissions for interactive work in the repo: allows `npm`,
-  `npx`, `dotnet`, `node` and read-only git (`status`, `diff`, `log`). Harness agent calls load
+  `npx`, `dotnet`, `node` and read-only git (`status`, `diff`). Harness agent calls load
   it too, so it must not allow anything the maker is denied.
 
 ## Order of work
