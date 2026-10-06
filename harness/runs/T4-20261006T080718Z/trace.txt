@@ -1,0 +1,46 @@
+#1 [maker-initial-1] Bash cat docs/requirements.md docs/decisions.md docs/architecture.md harness/protected-paths.txt && git ls-files frontend ...
+#2 [maker-initial-1] Bash git ls-files frontend; for f in frontend/src/App.tsx frontend/src/App.test.tsx frontend/src/main.tsx frontend/src/tes...
+#3 [maker-initial-1] Glob frontend/{src/**/*,*.*}
+#4 [maker-initial-1] Read frontend/src/App.tsx
+#5 [maker-initial-1] Read frontend/src/App.test.tsx
+#6 [maker-initial-1] Read frontend/vite.config.ts
+#7 [maker-initial-1] Read frontend/package.json
+#8 [maker-initial-1] Read frontend/src/main.tsx
+#9 [maker-initial-1] Read frontend/src/test/setup.ts
+#10 [maker-initial-1] Read frontend/eslint.config.js
+#11 [maker-initial-1] Read frontend/tsconfig.app.json
+#12 [maker-initial-1] Grep record
+#13 [maker-initial-1] Read backend/src/PulseCheck.Api/Questionnaires/QuestionnaireView.cs
+#14 [maker-initial-1] Write frontend/src/questionnaire.ts
+#15 [maker-initial-1] Write frontend/src/QuestionnaireView.tsx
+#16 [maker-initial-1] Write frontend/src/QuestionnairePages.tsx
+#17 [maker-initial-1] Write frontend/src/QuestionnaireView.test.tsx
+#18 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment/frontend && npm run lint 2>&1 | tail -20 && npm run typecheck 2>&1 | ta...
+#19 [maker-initial-1] Edit docs/architecture.md
+#20 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment && npm run verify 2>&1 | tail -25 && git status --short
+#21 [maker-initial-1] Bash npm --prefix C:/stypt/assignment/intrahealth-assignment run verify 2>&1 | tail -25
+#22 [maker-initial-1] Bash git status --short
+#23 [review-1] Glob frontend/src/**
+#24 [review-1] Read docs/architecture.md
+#25 [review-1] Read frontend/src/App.tsx
+#26 [review-1] Read frontend/src/main.tsx
+#27 [review-1] Read frontend/src/App.test.tsx
+#28 [review-1] Read frontend/src/test/setup.ts
+#29 [review-1] Grep QuestionnaireView
+#30 [review-1] Grep record (QuestionnaireView|PageView|QuestionView|OptionView|QuestionnairePageView|QuestionnaireQuestionView|Questionna...
+#31 [review-1] StructuredOutput 
+#32 [maker-revision1-1] Grep frontend/(src/App|src/main|index\.html|vite\.config)
+#33 [maker-revision1-1] Bash npm --prefix C:/stypt/assignment/intrahealth-assignment run verify 2>&1 | tail -8; git -C C:/stypt/assignment/intrahe...
+#34 [maker-revision1-1] Read harness/protected-paths.txt
+#35 [maker-revision1-1] Write frontend/src/App.tsx
+#36 [maker-revision1-1] Write frontend/src/App.test.tsx
+#37 [maker-revision1-1] Bash npm --prefix C:/stypt/assignment/intrahealth-assignment run verify 2>&1 | tail -15
+#38 [maker-revision1-1] Bash git status --short
+#39 [maker-revision1-1] Glob frontend/src/{Questionnaire*,questionnaire*}
+#40 [review-2] Read docs/architecture.md
+#41 [review-2] Glob frontend/**/*.{ts,tsx,json,js}
+#42 [review-2] Glob frontend/src/**/*
+#43 [review-2] Read frontend/src/test/setup.ts
+#44 [review-2] Read frontend/vite.config.ts
+#45 [review-2] Grep localStorage|sessionStorage|document\.cookie|history\.(push|replace)State|value\s*:\s*\d|score|band
+#46 [review-2] StructuredOutput 

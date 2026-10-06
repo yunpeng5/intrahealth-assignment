@@ -1,0 +1,82 @@
+[
+  {
+    "loop": "initial",
+    "attempt": 1,
+    "passed": true,
+    "results": [
+      {
+        "gate": "scope",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "protected",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "acceptance",
+        "passed": true,
+        "commands": [
+          {
+            "command": "npm run verify",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35924,
+            "log": "harness/runs/T4-20261006T080718Z/gates-raw/initial-1/cmd-1.log"
+          }
+        ]
+      },
+      {
+        "gate": "scope",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "protected",
+        "passed": true,
+        "files": []
+      }
+    ]
+  },
+  {
+    "loop": "revision1",
+    "attempt": 1,
+    "passed": true,
+    "results": [
+      {
+        "gate": "scope",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "protected",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "acceptance",
+        "passed": true,
+        "commands": [
+          {
+            "command": "npm run verify",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 30071,
+            "log": "harness/runs/T4-20261006T080718Z/gates-raw/revision1-1/cmd-1.log"
+          }
+        ]
+      },
+      {
+        "gate": "scope",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "protected",
+        "passed": true,
+        "files": []
+      }
+    ]
+  }
+]
