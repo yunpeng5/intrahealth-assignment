@@ -99,7 +99,7 @@ Notes on the metrics:
 | #8 T1 | 1 | approve | 3 nit | Vitest default excludes dropped; BOM and unused package in test `.csproj`; script location | Correctly judged the script location a ticket constraint, not an agent mistake. Cited a gitignored gate log as evidence (not reproducible from the repo). |
 
 | #9 invariant tests | 1 | approve | 4 should-fix, 2 nit | `static readonly` stores missed by the source scan; log check missed "scored 13" wording; GET check was a denylist (a string `points` property passed); database/file denylist incomplete and case-sensitive | **Partly wrong:** said the WC-6 question IDs are "defined nowhere"; they are in Issue #2, which the bot cannot see (the underlying gap, an undocumented default-configuration assumption, was real). **Would have weakened a test:** suggested skipping `bin`/`obj` in the file snapshot, but the test output folder is a `bin` folder and the likeliest leak location. **Missed:** a band range added as text (`"10 to 14: ..."`) passed every check. Note: the review ticket pointed the bot at the scan and score checks. |
-| #9 invariant tests | 2 (after fix round) | approve | 3 should-fix, 3 nit | Two false-positive risks that the leak spike could not show: the log check also scans startup lines and exception stack traces (`:line 13`, machine-specific paths), and the file rule flags a read-only `new FileStream` for loading definitions (D-5). Also: `Console`/`Debug` writes escape both log capture and the source scan; startup file writes are not covered. | **Repeated the partly-wrong ID finding:** said nothing T2 reads states the WC-6 IDs; Issue #2 lists them. _Outcome: pending merge decision._ |
+| #9 invariant tests | 2 (after fix round) | approve | 3 should-fix, 3 nit | Two false-positive risks that the leak spike could not show: the log check also scans startup lines and exception stack traces (`:line 13`, machine-specific paths), and the file rule flags a read-only `new FileStream` for loading definitions (D-5). Also: `Console`/`Debug` writes escape both log capture and the source scan; startup file writes are not covered. | **Repeated the partly-wrong ID finding:** said nothing T2 reads states the WC-6 IDs; Issue #2 lists them. _Outcome:_ both false-positive risks and the Console gap were fixed before the tests were protected, verified by a targeted spike rather than a third review pass. |
 
 _Calibration on planted bugs in a feature PR: pending (after T3)._
 
@@ -117,6 +117,15 @@ protected, with a correct fake implementation and deliberate leaks:
   body, a range appended to `nextSteps`, partial score in an error, score in a header, score in
   logs in three wordings, a cookie, a file write. The source scan caught a `static readonly`
   store and passed immutable definition storage.
+- **Final round (after review pass 2):** a correct implementation that also logs a startup
+  path containing `\`, a handled exception thrown from line 13, and a stack frame with
+  `\` in its path now passes. Disabling either new filter makes it fail, which confirms
+  each filter is what prevents the false positive. A read-only `FileStream` passes the source
+  scan; `FileAccess.Write` and `Console`/`Debug`/`Trace` writes fail it.
+- **Protected-path gate exercised** with the harness's real gate code on a promotion-style edit
+  (removing the `Pending` trait from a protected file): it failed with no authorization and
+  with a different protected file authorized, and passed only with the exact file authorized.
+  Whether an authorized edit is *only* the trait removal is left to review (D-13).
 - **Human correction:** the proposed fix for the text-range gap was "no digits at all in the
   success body". I rejected it as an invented product constraint (a future questionnaire could
   say "check again in 2 weeks"); the test instead asserts the exact expected
