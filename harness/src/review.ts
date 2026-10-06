@@ -100,7 +100,7 @@ export function validateReview(x: any): string[] {
 
 export const blockingFindings = (r: Review) => r.findings.filter((f) => f.severity === "blocking");
 
-export function renderReview(r: Review, meta: { round: number; model: string }): string {
+export function renderReview(r: Review, meta: { round: number; model: string; diffTruncated: boolean }): string {
   const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
   const count = (sev: string) => r.findings.filter((f) => f.severity === sev).length;
   const lines = [
@@ -108,6 +108,9 @@ export function renderReview(r: Review, meta: { round: number; model: string }):
     "",
     `Round ${meta.round} · \`${meta.model}\` · ${count("blocking")} blocking, ${count("should-fix")} should-fix, ${count("nit")} nit`,
     "",
+    ...(meta.diffTruncated
+      ? [`> The diff given to the reviewer was cut at ${MAX_DIFF_CHARS} characters; it had to read the rest from files.`, ""]
+      : []),
     "### Requirements",
     "",
     "| ID | Status | Evidence |",
@@ -144,13 +147,16 @@ export async function runReview(o: {
   base: string;
   label: string;
   transcriptPath: string;
-}): Promise<{ review: Review; calls: CallResult[] }> {
+}): Promise<{ review: Review; calls: CallResult[]; diffTruncated: boolean }> {
   const range = `${o.base}...HEAD`;
   const noRecords = ":(exclude)harness/runs";
   const diffStat = git("diff", "--stat", range, "--", ".", noRecords);
-  let diff = git("diff", range, "--", ".", noRecords, ":(exclude)**/package-lock.json");
+  // "**/" needs a directory in front, so the root lock file is excluded separately.
+  const noLocks = [":(exclude)package-lock.json", ":(exclude)**/package-lock.json"];
+  let diff = git("diff", range, "--", ".", noRecords, ...noLocks);
   let diffNote = "Lock files (`package-lock.json`) are left out of the diff below; they are in the diff stat.";
-  if (diff.length > MAX_DIFF_CHARS) {
+  const diffTruncated = diff.length > MAX_DIFF_CHARS;
+  if (diffTruncated) {
     diff = diff.slice(0, MAX_DIFF_CHARS);
     diffNote += ` The diff is cut at ${MAX_DIFF_CHARS} characters: read the remaining files directly.`;
   }
@@ -194,7 +200,7 @@ export async function runReview(o: {
   if (errors.length) {
     throw Object.assign(new ReviewInvalidError(`review output invalid after retry: ${errors.join("; ")} (${last.subtype})`), { calls });
   }
-  return { review: last.structuredOutput as Review, calls };
+  return { review: last.structuredOutput as Review, calls, diffTruncated };
 }
 
 /**
@@ -239,7 +245,7 @@ async function main(): Promise<void> {
     const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
     const dir = resolve(RUNS_DIR, `review-${(pr ? `pr${pr.number}` : ref).replace(/[^\w.-]+/g, "-")}-${stamp}`);
     mkdirSync(dir, { recursive: true });
-    const { review, calls } = await runReview({
+    const { review, calls, diffTruncated } = await runReview({
       config,
       ticketText,
       gatesSummary: "Not available: this review was run outside the ticket runner.",
@@ -247,7 +253,7 @@ async function main(): Promise<void> {
       label: "review",
       transcriptPath: resolve(dir, "transcript-review.jsonl"),
     });
-    const md = renderReview(review, { round: 1, model: config.reviewerModel });
+    const md = renderReview(review, { round: 1, model: config.reviewerModel, diffTruncated });
     writeFileSync(resolve(dir, "review.json"), JSON.stringify(review, null, 2) + "\n");
     writeFileSync(resolve(dir, "review.md"), md);
     if (pr && post) commentPr(String(pr.number), resolve(dir, "review.md"));

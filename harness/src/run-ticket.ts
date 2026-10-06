@@ -44,6 +44,7 @@ class Run {
   attempts: AttemptRecord[] = [];
   gates: (ReturnType<typeof excerpt> & { loop: string; attempt: number })[] = [];
   reviews: Review[] = [];
+  reviewDiffTruncated: boolean[] = [];
   trace: string[] = [];
   toolCallsByType: Record<string, number> = {};
   firstEditToolCall: number | null = null;
@@ -267,7 +268,8 @@ async function reviewLoop(r: Run): Promise<string> {
     for (const c of result.calls) r.addCall("reviewer", c);
     const review = result.review;
     r.reviews.push(review);
-    const md = renderReview(review, { round, model: r.config.reviewerModel });
+    r.reviewDiffTruncated.push(result.diffTruncated);
+    const md = renderReview(review, { round, model: r.config.reviewerModel, diffTruncated: result.diffTruncated });
     writeFileSync(resolve(r.dir, `review-${round}.json`), JSON.stringify(review, null, 2) + "\n");
     writeFileSync(resolve(r.dir, `review-${round}.md`), md);
     commentPr(r.prUrl!, resolve(r.dir, `review-${round}.md`));
@@ -319,6 +321,7 @@ function writeRecord(r: Run, startedAt: string): void {
     attempts: r.attempts,
     reviewRounds: r.reviews.length,
     blockingFindings: r.reviews.map((rv) => blockingFindings(rv).length),
+    reviewDiffTruncated: r.reviewDiffTruncated,
     diffStats: r.prUrl ? diffStats(r.base) : { files: changedFiles(r.base).filter((f) => !f.startsWith("harness/runs/")).length },
     metrics: { total: totals, maker: byRole("maker"), reviewer: byRole("reviewer") },
     toolCallsByType: r.toolCallsByType,
