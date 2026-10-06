@@ -182,8 +182,8 @@ docs/       requirements, decisions, architecture
 
 ### D-13 Protected invariant tests — Accepted
 
-- The critical invariant tests (T-1, T-2, D-1, D-7, D-8) are written by the mentor session,
-  independently of the agents that implement features, and reviewed by a human.
+- The critical invariant tests (T-1, T-2, D-1, D-7, D-8) are written separately from the
+  feature tickets, independently of the agents that implement features, and reviewed by a human.
 - They become protected before T2 starts: their paths are listed in
   `harness/protected-paths.txt`.
 - A ticket may change protected tests only if it explicitly authorizes changing them. Both the
