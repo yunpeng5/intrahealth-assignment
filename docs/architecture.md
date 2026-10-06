@@ -30,6 +30,11 @@ global.json, .nvmrc                     pin .NET 10 SDK (newer feature bands all
   `QuestionnaireDefinitionException` naming the file and the rule. `QuestionnaireCatalog` holds
   the full definitions (values, bands) for back-end use. Responses use the display-only
   `QuestionnaireView` records (D-1); never serialize a `QuestionnaireDefinition`.
+- Submissions (`POST /api/questionnaires/{id}/submissions`, D-2): `QuestionnaireScoring` validates
+  the answers (errors keyed by question ID, never echoing option IDs), sums the option values and
+  looks up the band. The score is a local value in the request handler only (D-7, D-8): it is
+  never returned, logged, put in an exception message or stored on any object. The response is a
+  `SubmissionResult` (label and next steps only); a `400` is a `ValidationProblem`.
 - Tests use `WebApplicationFactory<Program>` and exercise the API over HTTP. One test class
   per endpoint or feature, named `<Feature>Tests`; methods read as behaviour
   (`Get_health_returns_ok_status`).

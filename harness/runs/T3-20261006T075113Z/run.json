@@ -1,0 +1,145 @@
+{
+  "runId": "T3-20261006T075113Z",
+  "ticket": {
+    "issue": 3,
+    "id": "T3",
+    "title": "Submission endpoint with server-side scoring"
+  },
+  "branch": "ticket/T3-submission-endpoint-with-server-side-sco",
+  "baseSha": "25f198e73f963efeae7143c63f20148204329014",
+  "harnessSha": "25f198e73f963efeae7143c63f20148204329014",
+  "startedAt": "2026-10-06T07:51:13.979Z",
+  "finishedAt": "2026-10-06T07:57:35.165Z",
+  "models": {
+    "maker": "claude-opus-5-5",
+    "reviewer": "claude-fable-5-1"
+  },
+  "config": {
+    "makerModel": "claude-opus-5-5",
+    "reviewerModel": "claude-fable-5-1",
+    "maxAttempts": 3,
+    "maxTurnsPerCall": 60,
+    "callTimeoutMinutes": 20,
+    "reviewRevisionRounds": 1,
+    "feedbackTailLines": 150
+  },
+  "parsed": {
+    "acceptance": [
+      "npm run verify",
+      "dotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.SubmissionInvariantTests\"",
+      "dotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.NoServerStateInvariantTests\""
+    ],
+    "allowedPaths": [
+      "backend/**",
+      "docs/architecture.md"
+    ],
+    "pendingTests": [
+      "backend/tests/PulseCheck.Api.Tests/Invariants/SubmissionInvariantTests.cs",
+      "backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs"
+    ],
+    "protectedChanges": [
+      "backend/tests/PulseCheck.Api.Tests/Invariants/SubmissionInvariantTests.cs",
+      "backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs"
+    ]
+  },
+  "makerPrompt": "You are the coding agent for ticket T3 in the Pulse Check repository. CLAUDE.md is\nalready in your context: its hard rules apply in full. The ticket below defines your scope.\n\n## How this run works\n\n- You change files. The harness owns git and GitHub: it creates the branch, commits, pushes and\n  opens the PR. Do not commit, push, switch branches or run `gh`; those commands are denied.\n- You may run `npm`, `npx`, `dotnet` and `node`, plus `git status` and `git diff`.\n- When you finish, the harness checks your work with deterministic gates, in this order, and\n  stops at the first failure:\n  1. **Scope:** every changed, deleted or new file (not ignored by `.gitignore`) matches one of\n     the ticket's allowed paths. This includes files created by the commands you run.\n  2. **Protected paths:** no changes to paths in `harness/protected-paths.txt` unless the ticket\n     authorizes exactly those paths.\n  3. **Acceptance commands:** the ticket's `sh` block, one line at a time from the repository\n     root, through the platform shell (cmd.exe). Every command must exit 0.\n  Scope and protected paths are checked again after the acceptance commands.\n- If a gate fails, the harness sends you the failure in this same session so you can fix it.\n  You have 3 attempts in total. Run the acceptance commands yourself before you\n  finish, so the first attempt passes.\n- After the gates pass, a separate review bot reviews the PR against the ticket, the\n  requirements and the decisions. Its blocking findings may come back to you.\n- Your final message is put in the PR description. End with the summary CLAUDE.md asks for:\n  what you changed, which requirement IDs it covers, how you verified it, and open questions.\n\n## The ticket\n\n<ticket>\n# T3: Submission endpoint with server-side scoring\n\n## Goal\n\nA completed questionnaire can be submitted. The server scores it, maps the score to a severity\nband, and returns only the label and next-steps message, keeping nothing.\n\n## Requirements\n\n- 1.2, 1.6, 2.2, 2.3, 2.4, T-1, T-2\n- D-2, D-6, D-7, D-8, D-13\n\n## Behaviour\n\n- `POST /api/questionnaires/{id}/submissions` behaves exactly as in D-2.\n- The score is the integer sum of the selected options' values (D-6). It is mapped to the band\n  whose inclusive `min`–`max` range contains it.\n- The response body is exactly `{ \"label\": ..., \"nextSteps\": ... }`, with the band's label and\n  message unchanged.\n- `400` cases: a question with no answer, an unknown question ID, and an option ID that does\n  not belong to its question. Error messages refer to question IDs only.\n- `404` for an unknown questionnaire.\n- No questionnaire answers, scores, labels, submission identifiers or submission state are\n  stored, cached or logged (D-7, D-8). Log through `ILogger` only, and nothing derived from\n  answers.\n\n**Tests**\n- WC-6 band boundaries give the right label and message at scores 0, 4, 5, 9, 10, 14, 15 and\n  18.\n- Each `400` case, and the `404` case.\n- Unit tests for the scoring and band lookup.\n\n**Promotion (D-12, D-13)**\n- Make the protected pending test classes `SubmissionInvariantTests` and\n  `NoServerStateInvariantTests` pass without changing their assertions, then remove the\n  `[Trait(\"Category\", \"Pending\")]` line from each. That one-line removal per file is the only\n  change allowed to those files. Do not change any other protected file.\n\n## Acceptance commands (parsed)\n\n```sh\nnpm run verify\ndotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.SubmissionInvariantTests\"\ndotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.NoServerStateInvariantTests\"\n```\n\n## Pending tests to promote\n\n- `backend/tests/PulseCheck.Api.Tests/Invariants/SubmissionInvariantTests.cs`: all tests in\n  `SubmissionInvariantTests` (T-1, D-2, D-8)\n- `backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs`: all tests in\n  `NoServerStateInvariantTests` (T-2, D-7)\n\n## Protected test changes (parsed)\n\n- `backend/tests/PulseCheck.Api.Tests/Invariants/SubmissionInvariantTests.cs`: remove the\n  `[Trait(\"Category\", \"Pending\")]` line only (promotion). No other change.\n- `backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs`: remove the\n  `[Trait(\"Category\", \"Pending\")]` line only (promotion). No other change.\n\n## Allowed paths (parsed)\n\n- backend/**\n- docs/architecture.md\n\n## Out of scope\n\n- Any front-end change.\n- Storing submissions, rate limiting, analytics, or any other scoring method.\n- Section 3 (save and resume).\n- Any change to the other protected invariant files, including `InvariantSupport.cs`.\n\n## Notes for the reviewer\n\n- Look for the score escaping through the response, headers, exception messages,\n  ProblemDetails, logs, or a field on any object that outlives the request.\n- Check the boundary tests use the exact band edges.\n- The diffs to `SubmissionInvariantTests.cs` and `NoServerStateInvariantTests.cs` must be\n  exactly the removal of the `Pending` trait line. Any other change to a protected file is\n  blocking (D-13).\n</ticket>\n",
+  "stopReason": "approved",
+  "prUrl": "https://github.com/yunpeng5/intrahealth-assignment/pull/12",
+  "attempts": [
+    {
+      "loop": "initial",
+      "attempt": 1,
+      "call": "maker-initial-1",
+      "passed": true
+    }
+  ],
+  "reviewRounds": 1,
+  "blockingFindings": [
+    0
+  ],
+  "reviewDiffTruncated": [
+    false
+  ],
+  "diffStats": {
+    "files": 8,
+    "insertions": 326,
+    "deletions": 2
+  },
+  "metrics": {
+    "total": {
+      "costUsd": 1.9964092,
+      "turns": 41,
+      "durationMs": 333258,
+      "inputTokens": 160,
+      "outputTokens": 25663,
+      "cacheReadTokens": 831990,
+      "cacheCreationTokens": 115067
+    },
+    "maker": {
+      "costUsd": 0.7342032000000001,
+      "turns": 22,
+      "durationMs": 188025,
+      "inputTokens": 30,
+      "outputTokens": 15486,
+      "cacheReadTokens": 666516,
+      "cacheCreationTokens": 58212
+    },
+    "reviewer": {
+      "costUsd": 1.262206,
+      "turns": 19,
+      "durationMs": 145233,
+      "inputTokens": 130,
+      "outputTokens": 10177,
+      "cacheReadTokens": 165474,
+      "cacheCreationTokens": 56855
+    }
+  },
+  "toolCallsByType": {
+    "Bash": 7,
+    "Read": 17,
+    "Write": 4,
+    "Edit": 7,
+    "Glob": 1,
+    "Grep": 2,
+    "StructuredOutput": 1
+  },
+  "firstEditToolCall": 6,
+  "calls": [
+    {
+      "label": "maker-initial-1",
+      "role": "maker",
+      "model": "claude-opus-5-5",
+      "sessionId": "2a7fdf5e-36c7-4655-9bd6-2e1949010933",
+      "subtype": "success",
+      "metrics": {
+        "costUsd": 0.7342032000000001,
+        "turns": 22,
+        "durationMs": 188025,
+        "inputTokens": 30,
+        "outputTokens": 15486,
+        "cacheReadTokens": 666516,
+        "cacheCreationTokens": 58212
+      },
+      "toolCalls": 21,
+      "permissionDenials": 1
+    },
+    {
+      "label": "review-1",
+      "role": "reviewer",
+      "model": "claude-fable-5-1",
+      "sessionId": "6fd90efa-659a-4270-b018-9ae52f9c220f",
+      "subtype": "success",
+      "metrics": {
+        "costUsd": 1.262206,
+        "turns": 19,
+        "durationMs": 145233,
+        "inputTokens": 130,
+        "outputTokens": 10177,
+        "cacheReadTokens": 165474,
+        "cacheCreationTokens": 56855
+      },
+      "toolCalls": 18,
+      "permissionDenials": 0
+    }
+  ]
+}
