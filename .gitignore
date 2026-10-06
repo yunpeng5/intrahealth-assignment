@@ -1,0 +1,4 @@
+harness/node_modules/
+harness/runs/**/transcript-*.jsonl
+harness/runs/**/gates-raw/
+harness/runs/review-*/

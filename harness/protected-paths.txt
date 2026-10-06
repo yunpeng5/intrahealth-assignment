@@ -1,0 +1,2 @@
+# Protected invariant test paths (D-13), one path or glob per line, relative to the repo root.
+# Empty until the invariant tests exist.
