@@ -118,8 +118,8 @@ protected, with a correct fake implementation and deliberate leaks:
   logs in three wordings, a cookie, a file write. The source scan caught a `static readonly`
   store and passed immutable definition storage.
 - **Final round (after review pass 2):** a correct implementation that also logs a startup
-  path containing `\`, a handled exception thrown from line 13, and a stack frame with
-  `\` in its path now passes. Disabling either new filter makes it fail, which confirms
+  path containing a `13` folder, a handled exception thrown from line 13, and a stack frame
+  with a `13` folder in its path now passes. Disabling either new filter makes it fail, which confirms
   each filter is what prevents the false positive. A read-only `FileStream` passes the source
   scan; `FileAccess.Write` and `Console`/`Debug`/`Trace` writes fail it.
 - **Protected-path gate exercised** with the harness's real gate code on a promotion-style edit
