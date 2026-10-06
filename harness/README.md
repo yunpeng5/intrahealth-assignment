@@ -144,8 +144,9 @@ The harness passes `--permission-prompts none`, so anything not allowed is denie
   boundary. Allowed `node`, `npm` and `npx` execution can bypass them, use the network, read
   the environment and write outside the repo. Real isolation would be a container without
   credentials.
-- Not yet exercised end to end: a review revision round, the invalid-review-JSON retry, and a
-  real timeout. Process-tree termination is platform-aware (`taskkill /T /F` on Windows,
+- Exercised end to end: a review revision round (T4: review round 1 requested changes, the
+  resumed maker fixed it, round 2 approved). Not yet exercised end to end: the
+  invalid-review-JSON retry and a real timeout. Process-tree termination is platform-aware (`taskkill /T /F` on Windows,
   process-group `SIGKILL` on POSIX) but has only been run on Windows.
 - The harness starts `claude` without a shell, so on Windows it needs the native `claude`
   install; an npm-installed `claude.cmd` is not found.
