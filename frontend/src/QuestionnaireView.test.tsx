@@ -311,3 +311,173 @@ describe('QuestionnaireView paging', () => {
     expect(window.location.href).toBe(urlBefore)
   })
 })
+
+describe('QuestionnaireView submission', () => {
+  const result = { label: 'Some strain', nextSteps: 'Consider a self-guided resource.' }
+
+  const submit = () => screen.getByRole('button', { name: 'Submit' })
+
+  // Answers the first pages and moves to the last one, without answering it.
+  function reachLastPage() {
+    answer('Feeling tired or having little energy', 'More than half the days')
+    answer('Trouble falling or staying asleep', 'Not at all')
+    fireEvent.click(next())
+    answer('Feeling nervous or on edge', 'Nearly every day')
+    answer('Little interest or pleasure in doing things', 'Several days')
+    fireEvent.click(next())
+  }
+
+  function answerLastPage() {
+    answer('Difficulty concentrating', 'Not at all')
+    answer('Feeling that things are piling up', 'Nearly every day')
+  }
+
+  const expectedPayload = {
+    answers: {
+      tired: 'more-than-half',
+      sleep: 'not-at-all',
+      nervous: 'nearly-every-day',
+      interest: 'several-days',
+      concentrating: 'not-at-all',
+      'piling-up': 'nearly-every-day',
+    },
+  }
+
+  // The questionnaire title ("WC-6") has a digit of its own; everything else must have none (2.2).
+  function resultTextWithoutTitle() {
+    return document.body.textContent?.replace(wc6.title, '')
+  }
+
+  function submissionCalls() {
+    return fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')
+  }
+
+  it('blocks submitting until every question on the last page is answered', async () => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+    reachLastPage()
+
+    expect(submit()).toBeDisabled()
+    fireEvent.click(submit())
+    answer('Difficulty concentrating', 'Not at all')
+    expect(submit()).toBeDisabled()
+    fireEvent.click(submit())
+
+    expect(submissionCalls()).toHaveLength(0)
+    answer('Feeling that things are piling up', 'Several days')
+    expect(submit()).toBeEnabled()
+  })
+
+  it('has no submit control before the last page', async () => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+
+    expect(screen.queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument()
+    answer('Feeling tired or having little energy', 'Not at all')
+    answer('Trouble falling or staying asleep', 'Not at all')
+    fireEvent.click(next())
+    expect(screen.queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument()
+  })
+
+  it('sends exactly one POST with every answer, only at final submission', async () => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+    reachLastPage()
+    answerLastPage()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    fetchMock.mockResolvedValue(Response.json(result))
+    fireEvent.click(submit())
+    fireEvent.click(submit())
+    await screen.findByRole('heading', { name: result.label })
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const [url, init] = fetchMock.mock.calls[1]
+    expect(url).toBe('/api/questionnaires/wc-6/submissions')
+    expect(init?.method).toBe('POST')
+    expect(new Headers(init?.headers).get('Content-Type')).toBe('application/json')
+    expect(JSON.parse(init?.body as string)).toEqual(expectedPayload)
+  })
+
+  it('disables the submit control while the submission is in flight', async () => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+    reachLastPage()
+    answerLastPage()
+
+    let resolve: (response: Response) => void = () => {}
+    fetchMock.mockReturnValue(new Promise<Response>((r) => (resolve = r)))
+    fireEvent.click(submit())
+
+    expect(submit()).toBeDisabled()
+    fireEvent.click(submit())
+    expect(submissionCalls()).toHaveLength(1)
+
+    resolve(Response.json(result))
+    expect(await screen.findByRole('heading', { name: result.label })).toBeInTheDocument()
+    expect(submissionCalls()).toHaveLength(1)
+  })
+
+  it('shows the label and next-steps message, and nothing else from the questionnaire', async () => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+    reachLastPage()
+    answerLastPage()
+
+    fetchMock.mockResolvedValue(Response.json(result))
+    fireEvent.click(submit())
+
+    expect(await screen.findByRole('heading', { name: 'Some strain' })).toBeInTheDocument()
+    expect(screen.getByText('Consider a self-guided resource.')).toBeInTheDocument()
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument()
+    expect(resultTextWithoutTitle()).not.toMatch(/\d/)
+  })
+
+  it('shows only the label and message even if the response carries extra fields', async () => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+    reachLastPage()
+    answerLastPage()
+
+    fetchMock.mockResolvedValue(Response.json({ ...result, score: 4217, band: 3 }))
+    fireEvent.click(submit())
+
+    await screen.findByRole('heading', { name: result.label })
+    expect(resultTextWithoutTitle()).not.toMatch(/\d/)
+  })
+
+  it.each([
+    ['the server rejects the submission', () => fetchMock.mockResolvedValue(new Response(null, { status: 500 }))],
+    ['the request fails', () => fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))],
+  ])('shows an error and keeps the answers when %s, so the visitor can try again', async (_, fail) => {
+    respondWith(wc6)
+    await renderLoaded('Wellbeing Check (WC-6)')
+    reachLastPage()
+    answerLastPage()
+
+    fail()
+    fireEvent.click(submit())
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Your answers could not be submitted. Please try again.')
+    expect(within(question('Difficulty concentrating')).getByRole('radio', { name: 'Not at all' })).toBeChecked()
+    expect(within(question('Feeling that things are piling up')).getByRole('radio', { name: 'Nearly every day' }))
+      .toBeChecked()
+    fireEvent.click(back())
+    expect(within(question('Feeling nervous or on edge')).getByRole('radio', { name: 'Nearly every day' }))
+      .toBeChecked()
+    fireEvent.click(next())
+
+    fetchMock.mockResolvedValue(Response.json(result))
+    expect(submit()).toBeEnabled()
+    fireEvent.click(submit())
+
+    expect(await screen.findByRole('heading', { name: result.label })).toBeInTheDocument()
+    expect(submissionCalls()).toHaveLength(2)
+    expect(JSON.parse(submissionCalls()[1][1]?.body as string)).toEqual(expectedPayload)
+    expect(localStorage).toHaveLength(0)
+    expect(sessionStorage).toHaveLength(0)
+    expect(document.cookie).toBe('')
+  })
+})

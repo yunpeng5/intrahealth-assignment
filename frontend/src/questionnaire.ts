@@ -42,3 +42,23 @@ export async function fetchQuestionnaire(id: string, signal?: AbortSignal): Prom
   }
   return (await response.json()) as Questionnaire
 }
+
+// The only scoring output the browser receives (D-2): a label and a next-steps message, no score.
+export interface SubmissionResult {
+  label: string
+  nextSteps: string
+}
+
+// The single submission call (D-2, D-3). Scoring happens on the server only (1.6).
+export async function submitAnswers(id: string, answers: Answers): Promise<SubmissionResult> {
+  const response = await fetch(`/api/questionnaires/${encodeURIComponent(id)}/submissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answers }),
+  })
+  if (!response.ok) {
+    throw new Error(`Submitting answers failed with status ${response.status}`)
+  }
+  const { label, nextSteps } = (await response.json()) as SubmissionResult
+  return { label, nextSteps }
+}

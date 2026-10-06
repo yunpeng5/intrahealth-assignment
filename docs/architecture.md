@@ -51,6 +51,10 @@ global.json, .nvmrc                     pin .NET 10 SDK (newer feature bands all
   `QuestionnaireView.tsx` loads once and shows a plain error on failure; `QuestionnairePages.tsx`
   shows one page at a time, with answers (question ID → option ID) in React state only (D-3, D-4,
   D-15). The front end holds no option values or scoring logic.
+- Submission: `submitAnswers` in `questionnaire.ts` is the single POST (D-2), made only from
+  the last page's Submit control, which is disabled until the page is complete (D-15) and while
+  the request is in flight. `QuestionnairePages.tsx` then shows only the returned `label` and
+  `nextSteps` (2.2); on failure it shows a plain error and keeps the answers for a retry.
 - Calls to the back end use relative `/api/...` URLs. In development the Vite dev server
   proxies `/api` to `http://localhost:5132` (D-11), so no CORS setup is needed.
 - ESLint (`eslint.config.js`) runs with `--max-warnings 0`; TypeScript is checked with `tsc -b`.
