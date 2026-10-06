@@ -1,0 +1,58 @@
+#1 [maker-initial-1] Bash cat docs/requirements.md docs/decisions.md && ls docs && cat harness/protected-paths.txt && git ls-files backend
+#2 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment/backend && for f in src/PulseCheck.Api/Program.cs src/PulseCheck.Api/Pu...
+#3 [maker-initial-1] Read backend/src/PulseCheck.Api/Program.cs
+#4 [maker-initial-1] Read backend/src/PulseCheck.Api/PulseCheck.Api.csproj
+#5 [maker-initial-1] Read backend/src/PulseCheck.Api/appsettings.json
+#6 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/HealthEndpointTests.cs
+#7 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/PulseCheck.Api.Tests.csproj
+#8 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs
+#9 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/InvariantSupport.cs
+#10 [maker-initial-1] Read docs/architecture.md
+#11 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/NoPersistenceSourceTests.cs
+#12 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs
+#13 [maker-initial-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/SubmissionInvariantTests.cs
+#14 [maker-initial-1] Bash cat package.json && cat backend/src/PulseCheck.Api/Properties/launchSettings.json && cat .editorconfig | head -50 && ...
+#15 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/QuestionnaireDefinition.cs
+#16 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/QuestionnaireView.cs
+#17 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/QuestionnaireDefinitionException.cs
+#18 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/QuestionnaireDefinitionLoader.cs
+#19 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment/backend/src/PulseCheck.Api/Questionnaires && node -e '
+#20 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/QuestionnaireCatalog.cs
+#21 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/QuestionnaireEndpoints.cs
+#22 [maker-initial-1] Write backend/src/PulseCheck.Api/Program.cs
+#23 [maker-initial-1] Edit backend/src/PulseCheck.Api/Questionnaires/QuestionnaireCatalog.cs
+#24 [maker-initial-1] Write backend/src/PulseCheck.Api/Questionnaires/Definitions/wc-6.json
+#25 [maker-initial-1] Edit backend/src/PulseCheck.Api/appsettings.json
+#26 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment && dotnet build backend/PulseCheck.slnx --nologo -v q 2>&1 | tail -15
+#27 [maker-initial-1] Bash (dotnet run --project backend/src/PulseCheck.Api --no-build > /tmp/api.log 2>&1 &) ; for i in 1 2 3 4 5 6 7 8 9 10; d...
+#28 [maker-initial-1] Bash node -e '
+#29 [maker-initial-1] Bash node -e 'fetch("http://localhost:5132/api/health").then(r=>console.log("still running",r.status)).catch(()=>console.l...
+#30 [maker-initial-1] Write backend/tests/PulseCheck.Api.Tests/Questionnaires/Fixtures/second-questionnaire/daily-check.json
+#31 [maker-initial-1] Edit backend/tests/PulseCheck.Api.Tests/PulseCheck.Api.Tests.csproj
+#32 [maker-initial-1] Write backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireApp.cs
+#33 [maker-initial-1] Write backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireEndpointTests.cs
+#34 [maker-initial-1] Write backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireDataTests.cs
+#35 [maker-initial-1] Write backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireStartupValidationTests.cs
+#36 [maker-initial-1] Edit backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs
+#37 [maker-initial-1] Bash dotnet test backend/PulseCheck.slnx --nologo --filter "Category!=Pending" 2>&1 | tail -30
+#38 [maker-initial-1] Edit backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireApp.cs
+#39 [maker-initial-1] Bash dotnet test backend/PulseCheck.slnx --nologo --filter "Category!=Pending" 2>&1 | grep -vE "^\s*$" | tail -40
+#40 [maker-initial-1] Bash dotnet test backend/PulseCheck.slnx --nologo --filter "Category!=Pending" 2>&1 | tail -40
+#41 [maker-initial-1] Write backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireApp.cs
+#42 [maker-initial-1] Edit backend/tests/PulseCheck.Api.Tests/Questionnaires/QuestionnaireStartupValidationTests.cs
+#43 [maker-initial-1] Bash for i in 1 2 3 4 5; do dotnet test backend/PulseCheck.slnx --nologo --filter "Category!=Pending" 2>&1 | tail -3; done
+#44 [maker-initial-1] Bash dotnet test backend/PulseCheck.slnx --nologo --filter "Category!=Pending" 2>&1 | tail -25
+#45 [maker-initial-1] Bash node -e '
+#46 [maker-initial-1] Edit docs/architecture.md
+#47 [maker-initial-1] Bash npm run verify 2>&1 | tail -40
+#48 [maker-initial-1] Bash dotnet test backend/PulseCheck.slnx --nologo --filter "FullyQualifiedName~PulseCheck.Api.Tests.Invariants.Questionnai...
+#49 [maker-initial-1] Bash dotnet test backend/PulseCheck.slnx --nologo --filter "FullyQualifiedName~PulseCheck.Api.Tests.Invariants.Questionnai...
+#50 [maker-initial-1] Bash git status --porcelain --untracked-files=all && git diff -- backend/tests/PulseCheck.Api.Tests/Invariants/
+#51 [review-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs
+#52 [review-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/InvariantSupport.cs
+#53 [review-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/NoPersistenceSourceTests.cs
+#54 [review-1] Read backend/src/PulseCheck.Api/PulseCheck.Api.csproj
+#55 [review-1] Read backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs
+#56 [review-1] Read package.json
+#57 [review-1] Glob backend/src/PulseCheck.Api/**/*
+#58 [review-1] StructuredOutput 
