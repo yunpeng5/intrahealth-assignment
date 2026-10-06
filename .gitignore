@@ -1,4 +1,19 @@
 harness/node_modules/
-harness/runs/**/transcript-*.jsonl
+harness/runs/**/transcript*
 harness/runs/**/gates-raw/
 harness/runs/review-*/
+
+# Build output and dependencies
+bin/
+obj/
+node_modules/
+dist/
+
+# Local tooling
+*.tsbuildinfo
+*.local
+.vs/
+.vscode/
+.idea/
+*.user
+TestResults/

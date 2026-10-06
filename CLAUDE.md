@@ -29,11 +29,12 @@ severity label and next-steps message. React + TypeScript front end, ASP.NET Cor
 
 ## Commands
 
-<!-- Filled in by the initialization ticket. -->
-- Install: _tbd_
-- Run back end / front end: _tbd_
+- Install: `npm run setup` (Node 24 per `.nvmrc`, .NET 10 SDK per `global.json`)
+- Run back end / front end: `npm run dev:api` (http://localhost:5132) / `npm run dev:web`
+  (Vite, proxies `/api` to the back end)
 - Baseline verification: `npm run verify` (must pass)
 - Pending tests (informational only): `npm run verify:pending`
+- Details, conventions and pending-test promotion: [docs/architecture.md](docs/architecture.md)
 
 ## Definition of done
 
