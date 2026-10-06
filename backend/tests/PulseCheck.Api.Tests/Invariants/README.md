@@ -1,9 +1,9 @@
 # Protected invariant tests
 
 The critical product invariants, written outside the feature tickets and reviewed by a human
-(D-13). The five `.cs` files are listed in `harness/protected-paths.txt`: feature agents must not
-change them unless their ticket's "Protected test changes" section explicitly authorizes it.
-This README is not protected.
+(D-13). The five `.cs` files are listed in `harness/protected-paths.txt` (from the PR that added
+them): feature agents must not change them unless their ticket's "Protected test changes"
+section explicitly authorizes it. This README is not protected.
 
 All tests are **black-box**: they use only URLs and the JSON contract in
 `docs/decisions.md` (D-1, D-2) and never reference application types, so they compile before
@@ -21,8 +21,9 @@ the features exist. Tests that need endpoints not built yet carry `[Trait("Categ
 ## Contract on the shipped WC-6 definition
 
 The tests run against the app's **default configuration**, which must serve the shipped WC-6
-definition at `/api/questionnaires/wc-6`. They rely on the IDs fixed in T2 and on the WC-6 text
-in `docs/requirements.md`:
+definition at `/api/questionnaires/wc-6`. These tests fix the WC-6 IDs below; T2's ticket
+(Issue #2) lists the same IDs, and its shipped `wc-6.json` must use them. The expected result
+text comes from `docs/requirements.md`:
 
 - Questionnaire `wc-6`; questions `tired`, `sleep`, `nervous`, `interest`, `concentration`,
   `piling-up`; options `not-at-all` (0), `several-days` (1), `more-than-half` (2),
@@ -44,14 +45,22 @@ mechanically.
   exhaustive proof, and it does not replace review. It is aimed at visitor state: concurrent
   collections and static mutable collections are flagged; immutable lookup data
   (`IReadOnlyDictionary`, `FrozenDictionary`, arrays) is not, so questionnaire definitions
-  should be held in immutable types. Comment lines are ignored.
+  should be held in immutable types. Reading files, including a read-only `FileStream`, is
+  allowed; write modes and write access are flagged. Direct `Console`/`Debug`/`Trace` writes
+  are flagged because the runtime log check only sees `ILogger`. Comment lines are ignored.
 - **In-memory state** between requests is otherwise only covered by review.
-- **The file check** covers the app's content root and the test output directory (both
-  including `bin`/`obj`), not the whole disk. A build running at the same time as the tests
-  (an IDE background build, `dotnet watch`) can cause a spurious failure; re-run without it.
-- **Score checks use WC-6 values:** the score 13 and partial score 15. In logs, elapsed times
-  (`13.4ms`) are removed before matching a standalone `13` or `15`; in error responses, the
-  standard ProblemDetails `type` URI and `status` code are ignored.
+- **The file check** covers request handling, not startup (the snapshot is taken after the
+  host starts; startup writes are left to the source scan and review). It covers the app's
+  content root and the test output directory (both including `bin`/`obj`), not the whole disk.
+  A build running at the same time as the tests (an IDE background build, `dotnet watch`) can
+  cause a spurious failure; re-run without it.
+- **Score checks use WC-6 values:** the score 13 and partial score 15. The log check covers
+  only logs written while handling the flow, not startup output (which includes
+  machine-specific paths). In those logs, elapsed times (`13.4ms`) and stack-frame locations
+  (`in ...\Program.cs:line 13`) are removed before matching a standalone `13` or `15`.
+  Framework request logs also contain request and response sizes; for WC-6's payloads these
+  cannot be 13 or 15, but that is a property of the fixture, not a guarantee. In error
+  responses, the standard ProblemDetails `type` URI and `status` code are ignored.
 
 ## How they were checked
 

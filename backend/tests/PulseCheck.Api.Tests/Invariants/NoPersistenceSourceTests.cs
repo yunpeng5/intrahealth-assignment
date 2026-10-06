@@ -23,8 +23,11 @@ public class NoPersistenceSourceTests
     [
         R("file write",
             @"\bFile\.(WriteAll\w*|AppendAll\w*|AppendText|Create\w*|Move|Copy|Replace|Delete|OpenWrite|SetAttributes)\s*\(" +
-            @"|\bnew\s+(FileStream|StreamWriter)\b|\bDirectory\.(CreateDirectory|Move|Delete)\s*\(" +
-            @"|\bFileMode\.(Create|CreateNew|Append|Truncate|OpenOrCreate)\b|\bGetTempFileName\s*\(|\.(CreateText|OpenWrite)\s*\(",
+            // A read-only FileStream (FileMode.Open, FileAccess.Read) is allowed for loading definitions;
+            // write modes and write access are flagged.
+            @"|\bnew\s+StreamWriter\b|\bDirectory\.(CreateDirectory|Move|Delete)\s*\(" +
+            @"|\bFileMode\.(Create|CreateNew|Append|Truncate|OpenOrCreate)\b|\bFileAccess\.(Write|ReadWrite)\b" +
+            @"|\bGetTempFileName\s*\(|\.(CreateText|OpenWrite)\s*\(",
             "Do not write files. The server may only read questionnaire definitions."),
         R("database",
             @"EntityFrameworkCore|\bDbContext\b|\bDapper\b|\bSqlConnection\b|Sqlite|Npgsql|MongoDB|LiteDB|StackExchange\.Redis" +
@@ -38,9 +41,11 @@ public class NoPersistenceSourceTests
         R("session or cookie",
             @"\b(Add|Use)Session\b|\bISession\b|\.Session\b|\bCookies\.Append\b|\bCookieOptions\b|\bAddCookie\b",
             "Do not create sessions, cookies or visitor identifiers."),
-        R("request/response logging",
-            @"\b(Add|Use)HttpLogging\b|\b(Add|Use)W3CLogging\b",
-            "Do not enable HTTP request/response logging: it can record answers. Log nothing derived from answers."),
+        // Direct console/debug/trace output bypasses ILogger, so the runtime log check cannot see it.
+        R("request/response or direct logging",
+            @"\b(Add|Use)HttpLogging\b|\b(Add|Use)W3CLogging\b|\b(Console|Debug|Trace)\.Write",
+            "Do not enable HTTP request/response logging or write to Console/Debug/Trace: either can record answers. " +
+            "Use ILogger, and log nothing derived from answers."),
         // Visitor state kept across requests: concurrent collections and static mutable collections.
         // Immutable lookup data (IReadOnlyDictionary, FrozenDictionary, arrays) does not match.
         R("in-memory visitor-state store",

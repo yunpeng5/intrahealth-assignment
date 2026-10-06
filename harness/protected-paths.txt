@@ -1,2 +1,8 @@
 # Protected invariant test paths (D-13), one path or glob per line, relative to the repo root.
-# Empty until the invariant tests exist.
+# A ticket may change a listed file only if its "Protected test changes" section names it.
+# The gate authorizes whole files, not specific edits (see D-13).
+backend/tests/PulseCheck.Api.Tests/Invariants/InvariantSupport.cs
+backend/tests/PulseCheck.Api.Tests/Invariants/NoPersistenceSourceTests.cs
+backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs
+backend/tests/PulseCheck.Api.Tests/Invariants/SubmissionInvariantTests.cs
+backend/tests/PulseCheck.Api.Tests/Invariants/NoServerStateInvariantTests.cs

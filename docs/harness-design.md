@@ -30,7 +30,7 @@ deterministic replay, a separate replay command.
 harness/
   package.json            scripts: ticket, review, metrics, test, typecheck
   config.json             models, limits (below)
-  protected-paths.txt     protected test paths (D-13); empty until the invariant tests exist
+  protected-paths.txt     protected invariant test files (D-13)
   prompts/
     maker.md              maker instructions, wrapped around the ticket
     feedback.md           template for gate/review failure feedback
@@ -146,8 +146,11 @@ ticket file without `issue:` produces a PR without `Closes #<n>` (scratch ticket
 5. **Gates**, run by the harness in this order. Stop at the first failure.
    1. Scope: every changed or untracked file matches an allowed glob. `harness/runs/**` is
       ignored.
-   2. Protected paths: no changes under `protected-paths.txt` unless the ticket authorizes
-      exactly those paths.
+   2. Protected paths: no changes under `protected-paths.txt` unless the ticket's
+      "Protected test changes" section lists them (it accepts globs; tickets use exact paths).
+      The gate authorizes whole files, not specific edits: whether an authorized change is
+      only what the ticket intends (for example removing a `Pending` trait) is checked by the
+      review bot and the human merge review (D-13).
    3. Acceptance commands, in order, through the platform shell, with exit codes checked.
       Each non-empty, non-comment line of the `sh` block is one command. Each command is
       killed (with its process tree) after `callTimeoutMinutes`.

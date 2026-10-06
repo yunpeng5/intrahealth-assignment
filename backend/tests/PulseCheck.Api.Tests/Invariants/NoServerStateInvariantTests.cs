@@ -73,6 +73,9 @@ public class NoServerStateInvariantTests
                 logging.AddFilter<CapturingLoggerProvider>(null, LogLevel.Trace);
             }));
         using var client = factory.CreateClient();
+        // CreateClient started the host. Only logs written while handling the flow are checked:
+        // startup output (content root path, environment) is machine-specific, not answer data.
+        capture.Messages.Clear();
 
         await CompleteFlow(client);
 
@@ -83,10 +86,11 @@ public class NoServerStateInvariantTests
             // The score (13) or partial score (15) as a standalone number, in any wording.
             ("the score", new Regex(@"\b(13|15)\b")),
         };
-        // Elapsed times ("13.4ms", "15 ms") are framework output, not scores: removed before matching.
-        var elapsed = new Regex(@"\b\d+(\.\d+)?\s*ms\b", RegexOptions.IgnoreCase);
+        // Elapsed times ("13.4ms", "15 ms") and stack-frame locations ("in C:\src\13\Program.cs:line 13")
+        // are framework output, not scores: removed before matching.
+        var frameworkNumbers = new Regex(@"\b\d+(\.\d+)?\s*ms\b| in [^\r\n]*?:line \d+", RegexOptions.IgnoreCase);
         var leaks = capture.Messages
-            .Select(message => (Original: message, Checked: elapsed.Replace(message, "<elapsed>")))
+            .Select(message => (Original: message, Checked: frameworkNumbers.Replace(message, "<framework>")))
             .SelectMany(m => forbidden.Where(f => f.Pattern.IsMatch(m.Checked)).Select(f => $"{f.What} in: {m.Original}"))
             .ToList();
         Assert.True(leaks.Count == 0,

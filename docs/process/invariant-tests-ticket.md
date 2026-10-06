@@ -53,10 +53,13 @@ npm run verify
 - backend/tests/PulseCheck.Api.Tests/Invariants/**
 - docs/process/invariant-tests-ticket.md
 - docs/decisions.md (D-13 only: the promotion limit, added after the first review)
+- harness/protected-paths.txt (the five `.cs` files, added after the second review)
+- docs/harness-design.md (protected-path gate wording only)
 
 ## Out of scope
 
-- Product code, feature tests, `harness/protected-paths.txt` (protection is set up after review).
+- Product code and feature tests. (`harness/protected-paths.txt` was originally out of scope;
+  after two review passes the five `.cs` files were added in this PR.)
 
 ## Notes for the reviewer
 
