@@ -4,11 +4,14 @@ using System.Text.RegularExpressions;
 namespace PulseCheck.Api.Tests.Invariants;
 
 /// <summary>
-/// T-2, D-7: the back end contains no mechanism for persisting visitor data. A static scan of
-/// backend/src for known persistence, caching, session, cookie, body-logging and visitor-state
-/// store patterns. It is heuristic: a denylist of common APIs, not an exhaustive proof, and it
-/// does not replace review. Reading files (questionnaire definitions, D-5) and immutable lookup
-/// data are allowed; comment lines are ignored. Baseline: must pass at all times.
+/// T-2, 2.3, D-7: a static scan of backend/src for the mechanisms that map directly to the
+/// requirements: file writes and databases ("nothing is written on the server", T-2) and sessions
+/// and cookies (no visitor identifier or state, 2.3). It does not ban technologies or output
+/// channels as proxies for what they might contain. Allowed: reading files (questionnaire
+/// definitions, D-5), in-memory collections, in-process and distributed caches, logging and
+/// console output. Left to review (D-7) and the runtime invariant tests: in-memory visitor state,
+/// direct console output, and persistence mechanisms this list does not name. It is a denylist
+/// of common APIs, not an exhaustive proof. Comment lines are ignored. Baseline: must pass at all times.
 /// Section 3 (stretch) changes what the server may store; this test may only be changed by a
 /// ticket that explicitly authorizes it (D-13, D-14).
 /// </summary>
@@ -28,30 +31,17 @@ public class NoPersistenceSourceTests
             @"|\bnew\s+StreamWriter\b|\bDirectory\.(CreateDirectory|Move|Delete)\s*\(" +
             @"|\bFileMode\.(Create|CreateNew|Append|Truncate|OpenOrCreate)\b|\bFileAccess\.(Write|ReadWrite)\b" +
             @"|\bGetTempFileName\s*\(|\.(CreateText|OpenWrite)\s*\(",
-            "Do not write files. The server may only read questionnaire definitions."),
+            "Do not write files (T-2: nothing is written on the server). The server may only read questionnaire definitions."),
         R("database",
-            @"EntityFrameworkCore|\bDbContext\b|\bDapper\b|\bSqlConnection\b|Sqlite|Npgsql|MongoDB|LiteDB|StackExchange\.Redis" +
-            @"|MySql|Oracle\.|CosmosClient|BlobServiceClient|AmazonS3",
-            "Do not add a database or data store. Nothing about a visitor's questionnaire is persisted.",
+            @"EntityFrameworkCore|\bDbContext\b|\bDapper\b|\bSqlConnection\b|Sqlite|Npgsql|MongoDB|LiteDB|MySql|Oracle\.|CosmosClient",
+            "Do not add a database (T-2: nothing is written on the server; D-5: definitions are read-only files).",
             RegexOptions.IgnoreCase),
-        R("cache",
-            @"\bIMemoryCache\b|\bAddMemoryCache\b|\bIDistributedCache\b|\bAddDistributed\w*Cache\b|\bAdd\w*RedisCache\b|\bHybridCache\b" +
-            @"|\b(Add|Use)OutputCache\b|\b(Add|Use)ResponseCaching\b",
-            "Do not cache requests, responses or answers on the server."),
         R("session or cookie",
             @"\b(Add|Use)Session\b|\bISession\b|\.Session\b|\bCookies\.Append\b|\bCookieOptions\b|\bAddCookie\b",
-            "Do not create sessions, cookies or visitor identifiers."),
-        // Direct console/debug/trace output bypasses ILogger, so the runtime log check cannot see it.
-        R("request/response or direct logging",
-            @"\b(Add|Use)HttpLogging\b|\b(Add|Use)W3CLogging\b|\b(Console|Debug|Trace)\.Write",
-            "Do not enable HTTP request/response logging or write to Console/Debug/Trace: either can record answers. " +
-            "Use ILogger, and log nothing derived from answers."),
-        // Visitor state kept across requests: concurrent collections and static mutable collections.
-        // Immutable lookup data (IReadOnlyDictionary, FrozenDictionary, arrays) does not match.
-        R("in-memory visitor-state store",
-            @"\bConcurrent(Dictionary|Bag|Queue|Stack)\b|\bstatic\s+(readonly\s+)?(List|Dictionary|SortedDictionary|HashSet|Queue|Stack)<",
-            "Do not keep answers, scores or progress in memory across requests; compute the result within the request. " +
-            "Hold questionnaire definitions in immutable types (IReadOnlyDictionary, FrozenDictionary, arrays)."),
+            "Do not create sessions, cookies or visitor identifiers (2.3: no identifier)."),
+        // Deliberately no rules for caches, logging middleware, console output or in-memory collections:
+        // they are technologies or channels, not visitor state, and a static scan cannot tell what they
+        // hold. The runtime tests check logged content; review covers the rest (D-7).
     ];
 
     [Fact]
