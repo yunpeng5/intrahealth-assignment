@@ -192,6 +192,10 @@ docs/       requirements, decisions, architecture
   `harness/protected-paths.txt`.
 - A ticket may change protected tests only if it explicitly authorizes changing them. Both the
   ticket runner and the review bot treat any other change as blocking.
+- Promotion (D-12) of a protected pending test happens in the ticket that makes it pass: the
+  ticket authorizes the named files, and the only intended change is removing the `Pending`
+  trait. The protected-path gate authorizes whole files, not that exact edit; the review bot and
+  the human merge review check it.
 
 ### D-14 Stretch needs an authorizing ticket — Accepted
 Requirements: S-3
