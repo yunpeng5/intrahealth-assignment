@@ -1,0 +1,6 @@
+#1 [maker-initial-1] Write scratch/hello.txt
+#2 [maker-initial-1] Bash node -e "const s=require('fs').readFileSync('scratch/hello.txt','utf8').trim(); if (s !== 'hello') { console.error('e...
+#3 [maker-initial-1] Bash node -e "const s=require('fs').readFileSync('C:/stypt/assignment/intrahealth-assignment/scratch/hello.txt','utf8').tr...
+#4 [review-1] Read scratch/hello.txt
+#5 [review-1] Glob {backend,frontend}/**/*
+#6 [review-1] StructuredOutput 
