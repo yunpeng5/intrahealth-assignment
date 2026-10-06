@@ -21,12 +21,14 @@ in this design.
 
 ## Behaviour
 
-- In-memory collections (static, mutable or concurrent) and in-process caches are no longer
-  flagged; a static scan cannot tell a definition registry from visitor state.
-- Still flagged: file writes, databases, out-of-process caches, sessions and cookies,
-  request-body logging, direct `Console`/`Debug`/`Trace` writes.
-- The test's comment and the README state that in-memory visitor state is not detected by any
-  test and is left to review (D-7).
+- The scan keeps only mechanisms that map directly to the requirements: file writes and
+  databases (T-2) and sessions and cookies (2.3).
+- No longer flagged: in-memory collections, caches (in-process and distributed), HTTP logging
+  middleware and `Console`/`Debug`/`Trace` writes. They are technologies or channels, not visitor
+  state (updated after the first review: the original version of this PR kept distributed
+  caches, logging middleware and console writes).
+- The test's comment and the README state that in-memory visitor state, direct console output
+  and unlisted persistence mechanisms are not detected by any test and are left to review (D-7).
 - No other protected file changes; the pending invariant tests are unchanged.
 
 ## Acceptance commands (parsed)
