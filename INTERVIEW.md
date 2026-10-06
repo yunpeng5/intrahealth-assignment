@@ -98,7 +98,28 @@ Notes on the metrics:
 | #7 harness bootstrap | 2 | approve | 2 should-fix, 3 nit | standalone review reads `--ticket-file` before checkout; no tests for scope/protected gates; protected-test authorization accepts globs | **Partly wrong:** cited a README use case for the ticket-file problem that does not apply. Found issues pass 1 had not raised: one pass is not exhaustive. |
 | #8 T1 | 1 | approve | 3 nit | Vitest default excludes dropped; BOM and unused package in test `.csproj`; script location | Correctly judged the script location a ticket constraint, not an agent mistake. Cited a gitignored gate log as evidence (not reproducible from the repo). |
 
-_Calibration on planted bugs: pending (after T3)._
+| #9 invariant tests | 1 | approve | 4 should-fix, 2 nit | `static readonly` stores missed by the source scan; log check missed "scored 13" wording; GET check was a denylist (a string `points` property passed); database/file denylist incomplete and case-sensitive | **Partly wrong:** said the WC-6 question IDs are "defined nowhere"; they are in Issue #2, which the bot cannot see (the underlying gap, an undocumented default-configuration assumption, was real). **Would have weakened a test:** suggested skipping `bin`/`obj` in the file snapshot, but the test output folder is a `bin` folder and the likeliest leak location. **Missed:** a band range added as text (`"10 to 14: ..."`) passed every check. Note: the review ticket pointed the bot at the scan and score checks. |
+
+_Calibration on planted bugs in a feature PR: pending (after T3)._
+
+### Testing the protected tests
+
+The invariant tests (PR #9) were checked against a throwaway `Program.cs` before they became
+protected, with a correct fake implementation and deliberate leaks:
+
+- **First spike:** the correct fake failed one test, which was a false positive. ASP.NET's
+  standard ProblemDetails body contains `"type": "...rfc9110#section-15.5.1"`, which matched the
+  "partial score 15" check. Fixed by ignoring the standard `type` URI and `status` code. Without
+  the spike, T3 would have met a red protected test it may not change.
+- **After the review fix round:** the correct fake passed 11/11 on three runs. 11 leaks each
+  failed exactly the intended test: option values, a string `points` property, score in the
+  body, a range appended to `nextSteps`, partial score in an error, score in a header, score in
+  logs in three wordings, a cookie, a file write. The source scan caught a `static readonly`
+  store and passed immutable definition storage.
+- **Human correction:** the proposed fix for the text-range gap was "no digits at all in the
+  success body". I rejected it as an invented product constraint (a future questionnaire could
+  say "check again in 2 weeks"); the test instead asserts the exact expected
+  `{ label, nextSteps }` for a known answer set.
 
 ## AI usage
 
@@ -150,6 +171,14 @@ _Calibration on planted bugs: pending (after T3)._
 - Protected-test authorization accepts globs, not exact paths.
 - Re-running a stopped ticket fails at `git checkout -b` if its branch still exists.
 - Windows needs the native `claude` install (`claude.cmd` is not found).
+- Promotion of protected pending tests: the gate authorizes whole files; that the change is only
+  the `Pending` trait removal is checked by review, not mechanically (D-13).
+
+**Invariant tests**
+- The source scan is heuristic (known patterns, not exhaustive); in-memory state is otherwise
+  covered only by review.
+- Score checks use WC-6 values (13, partial 15); the file check covers the app's directories,
+  not the whole disk, and can fail spuriously if a build runs during the tests.
 
 **Product**
 - Root task runner lives in `frontend/scripts/run.mjs` (T1 allowed paths).
