@@ -21,6 +21,7 @@ npm --prefix harness run ticket -- <issue-number>           # full run
 npm --prefix harness run ticket -- --ticket-file <path>     # same, from a saved ticket snapshot (re-run)
 npm --prefix harness run review -- <pr-number | branch>     # review bot only
 npm --prefix harness run metrics                            # summary table across run records
+npm --prefix harness run test                               # unit tests (node:test)
 npm --prefix harness run typecheck
 ```
 
@@ -43,8 +44,8 @@ npm --prefix harness run typecheck
    `harness/runs/<run-id>/`, ticket snapshot.
 4. **Maker.** `claude -p` with `prompts/maker.md` wrapped around the ticket. Tools: Read, Edit,
    Write, Glob, Grep, and Bash limited to `npm`, `npx`, `dotnet`, `node`, `git status`,
-   `git diff`. `git commit`, `git push`, `gh` and web tools are denied. Killed after
-   `callTimeoutMinutes`.
+   `git diff`. `git commit`, `git push`, `gh`, web tools and edits to `.claude/**` and
+   `.mcp.json` are denied, and no MCP servers are loaded. Killed after `callTimeoutMinutes`.
 5. **Gates**, in order, stopping at the first failure:
    1. scope: every changed, deleted or untracked file matches an allowed glob
       (`harness/runs/**` is ignored);
@@ -53,13 +54,15 @@ npm --prefix harness run typecheck
    then scope and protected paths again, since commands can create files.
 6. **Retry.** On a failure the harness writes `feedback-<k>.md` from `prompts/feedback.md` and
    resumes the same maker session with it. It stops at `maxAttempts` (`max-attempts`) or when
-   the failure signature repeats from the previous attempt (`no-progress`). On a stop the
+   the failure signature repeats from the previous attempt (`no-progress`). If the previous
+   maker call was cut off (timeout, turn limit), the feedback says so. On a stop the
    record is written and the branch is left unpushed, with the maker's changes uncommitted, for
    a human to inspect.
 7. **PR.** On a pass: commit `T<n>: <title>`, push, `gh pr create` with `Closes #<n>`, the
    maker's summary, the gate results and the attempt count.
 8. **Review.** The review bot (`prompts/reviewer.md`, `reviewerModel`, read-only tools, fresh
-   context) returns JSON that the harness validates; an invalid answer gets one retry. The
+   context) returns JSON that the harness validates; an invalid answer gets one retry, then
+   the run stops with `review-invalid`. The
    review is posted as a PR comment. On `request-changes` with revision rounds left, the
    blocking findings go back to the maker session, the gates run again (with a fresh
    `maxAttempts` budget), the fix is pushed and reviewed again. Then the run stops either way.
@@ -67,7 +70,8 @@ npm --prefix harness run typecheck
    A human merges the PR; that merge is the approval.
 
 Stop reasons: `approved`, `changes-requested`, `max-attempts`, `no-progress`, `maker-error`,
-`review-invalid`, `revision-max-attempts`, `revision-no-progress`, `error`. The exit code is 0
+`review-invalid`, `revision-max-attempts`, `revision-no-progress`, `revision-maker-error`,
+`error`. The exit code is 0
 when a PR was opened, 1 otherwise, 2 for a ticket error.
 
 ## Ticket files
@@ -93,7 +97,7 @@ title: T1: Initialize the project and verification baseline
 | File | Committed | Contents |
 |---|---|---|
 | `ticket.md` | yes | ticket snapshot as run (re-runnable with `--ticket-file`) |
-| `run.json` | yes | run ID, issue, base/harness SHA, models, config, parsed sections, rendered maker prompt, attempts, per-call metrics, totals, stop reason, PR URL |
+| `run.json` | yes | run ID, issue, base/harness SHA, models, config, parsed sections, rendered maker prompt, attempts, per-call metrics, totals, stop reason, PR URL, whether each review's diff was cut |
 | `feedback-<k>.md` | yes | feedback sent on retry or revision k |
 | `gates.json` | yes | gate results per attempt, failure excerpts (last 60 lines) |
 | `review-<round>.json`, `review-<round>.md` | yes | review bot output per round |
@@ -124,9 +128,24 @@ and the index of the first Edit or Write.
 | `src/review.ts` | review bot: inputs, call, validation, rendering; standalone `review` command |
 | `src/metrics.ts` | markdown table across run records |
 | `src/git.ts`, `src/gh.ts`, `src/proc.ts`, `src/config.ts` | thin wrappers and shared paths |
+| `test/*.test.ts` | unit tests: ticket parsing, failure signature, review validation |
 
 ## Settings for agent calls
 
 Every `claude -p` call uses `--setting-sources project`, so it loads `CLAUDE.md` and
 `.claude/settings.json` but not per-user settings. That keeps runs the same across machines.
+It also passes `--strict-mcp-config` without `--mcp-config`, so no MCP servers are loaded.
 The harness passes `--permission-prompts none`, so anything not allowed is denied, not asked.
+
+## Known limitations
+
+- The tool restrictions (denied `git commit`, `git push` and `gh`, the `.claude/**` and
+  `.mcp.json` denies, `--strict-mcp-config`) are workflow containment, not a security
+  boundary. Allowed `node`, `npm` and `npx` execution can bypass them, use the network, read
+  the environment and write outside the repo. Real isolation would be a container without
+  credentials.
+- Not yet exercised end to end: a review revision round, the invalid-review-JSON retry, and a
+  real timeout. Process-tree termination is platform-aware (`taskkill /T /F` on Windows,
+  process-group `SIGKILL` on POSIX) but has only been run on Windows.
+- The harness starts `claude` without a shell, so on Windows it needs the native `claude`
+  install; an npm-installed `claude.cmd` is not found.
