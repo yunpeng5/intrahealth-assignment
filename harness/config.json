@@ -1,0 +1,9 @@
+{
+  "makerModel": "claude-opus-5-5",
+  "reviewerModel": "claude-fable-5-1",
+  "maxAttempts": 3,
+  "maxTurnsPerCall": 60,
+  "callTimeoutMinutes": 20,
+  "reviewRevisionRounds": 1,
+  "feedbackTailLines": 150
+}
