@@ -1,0 +1,112 @@
+{
+  "id": "wc-6",
+  "title": "Wellbeing Check (WC-6)",
+  "instructions": "Over the past two weeks, how often have you been bothered by the following?",
+  "scoring": "sum",
+  "pages": [
+    {
+      "id": "energy-sleep",
+      "title": "Energy and sleep",
+      "questions": [
+        {
+          "id": "tired",
+          "prompt": "Feeling tired or having little energy",
+          "options": [
+            { "id": "not-at-all", "label": "Not at all", "value": 0 },
+            { "id": "several-days", "label": "Several days", "value": 1 },
+            { "id": "more-than-half", "label": "More than half the days", "value": 2 },
+            { "id": "nearly-every-day", "label": "Nearly every day", "value": 3 }
+          ]
+        },
+        {
+          "id": "sleep",
+          "prompt": "Trouble falling or staying asleep",
+          "options": [
+            { "id": "not-at-all", "label": "Not at all", "value": 0 },
+            { "id": "several-days", "label": "Several days", "value": 1 },
+            { "id": "more-than-half", "label": "More than half the days", "value": 2 },
+            { "id": "nearly-every-day", "label": "Nearly every day", "value": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mood",
+      "title": "Mood",
+      "questions": [
+        {
+          "id": "nervous",
+          "prompt": "Feeling nervous or on edge",
+          "options": [
+            { "id": "not-at-all", "label": "Not at all", "value": 0 },
+            { "id": "several-days", "label": "Several days", "value": 1 },
+            { "id": "more-than-half", "label": "More than half the days", "value": 2 },
+            { "id": "nearly-every-day", "label": "Nearly every day", "value": 3 }
+          ]
+        },
+        {
+          "id": "interest",
+          "prompt": "Little interest or pleasure in doing things",
+          "options": [
+            { "id": "not-at-all", "label": "Not at all", "value": 0 },
+            { "id": "several-days", "label": "Several days", "value": 1 },
+            { "id": "more-than-half", "label": "More than half the days", "value": 2 },
+            { "id": "nearly-every-day", "label": "Nearly every day", "value": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "title": "Focus",
+      "questions": [
+        {
+          "id": "concentration",
+          "prompt": "Difficulty concentrating",
+          "options": [
+            { "id": "not-at-all", "label": "Not at all", "value": 0 },
+            { "id": "several-days", "label": "Several days", "value": 1 },
+            { "id": "more-than-half", "label": "More than half the days", "value": 2 },
+            { "id": "nearly-every-day", "label": "Nearly every day", "value": 3 }
+          ]
+        },
+        {
+          "id": "piling-up",
+          "prompt": "Feeling that things are piling up",
+          "options": [
+            { "id": "not-at-all", "label": "Not at all", "value": 0 },
+            { "id": "several-days", "label": "Several days", "value": 1 },
+            { "id": "more-than-half", "label": "More than half the days", "value": 2 },
+            { "id": "nearly-every-day", "label": "Nearly every day", "value": 3 }
+          ]
+        }
+      ]
+    }
+  ],
+  "bands": [
+    {
+      "min": 0,
+      "max": 4,
+      "label": "Doing well",
+      "nextSteps": "Keep doing what works for you. You can check in again any time."
+    },
+    {
+      "min": 5,
+      "max": 9,
+      "label": "Some strain",
+      "nextSteps": "Consider a self-guided resource. Checking in weekly helps you see patterns."
+    },
+    {
+      "min": 10,
+      "max": 14,
+      "label": "Under pressure",
+      "nextSteps": "It may help to talk to someone. You can request care from this portal."
+    },
+    {
+      "min": 15,
+      "max": 18,
+      "label": "Struggling",
+      "nextSteps": "Please consider reaching out for support soon. If you are in crisis, contact a crisis line now."
+    }
+  ]
+}

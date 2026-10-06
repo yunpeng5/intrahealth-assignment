@@ -9,7 +9,6 @@ namespace PulseCheck.Api.Tests.Invariants;
 /// values, scoring method, score ranges, severity labels or next-steps messages.
 /// Pending until T2, which may only remove the Pending trait from this file (D-13).
 /// </summary>
-[Trait("Category", "Pending")]
 public class QuestionnaireContractInvariantTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {

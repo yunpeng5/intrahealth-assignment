@@ -23,6 +23,13 @@ global.json, .nvmrc                     pin .NET 10 SDK (newer feature bands all
   endpoints in a static class per feature (e.g. `Questionnaires/QuestionnaireEndpoints.cs`)
   with a `Map...` extension method called from `Program.cs`.
 - Namespaces follow folders (`PulseCheck.Api.<Folder>`). File-scoped namespaces, nullable on.
+- Questionnaires (`Questionnaires/`, D-5, D-6): one JSON file per questionnaire in the directory
+  set by `Questionnaires:DefinitionsPath` (relative paths resolve against the content root;
+  default `Questionnaires/Definitions`, which ships `wc-6.json`). `QuestionnaireDefinitionLoader`
+  reads and checks every `*.json` file there at startup; an invalid file stops startup with a
+  `QuestionnaireDefinitionException` naming the file and the rule. `QuestionnaireCatalog` holds
+  the full definitions (values, bands) for back-end use. Responses use the display-only
+  `QuestionnaireView` records (D-1); never serialize a `QuestionnaireDefinition`.
 - Tests use `WebApplicationFactory<Program>` and exercise the API over HTTP. One test class
   per endpoint or feature, named `<Feature>Tests`; methods read as behaviour
   (`Get_health_returns_ok_status`).

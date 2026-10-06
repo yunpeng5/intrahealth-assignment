@@ -1,0 +1,57 @@
+{
+  "id": "daily-check",
+  "title": "Daily Check",
+  "instructions": "Today, did you notice the following?",
+  "scoring": "sum",
+  "pages": [
+    {
+      "id": "body",
+      "title": "Body",
+      "questions": [
+        {
+          "id": "headache",
+          "prompt": "A headache",
+          "options": [
+            { "id": "no", "label": "No", "value": 0 },
+            { "id": "yes", "label": "Yes", "value": 1 }
+          ]
+        },
+        {
+          "id": "appetite",
+          "prompt": "A change in appetite",
+          "options": [
+            { "id": "no", "label": "No", "value": 0 },
+            { "id": "yes", "label": "Yes", "value": 1 }
+          ]
+        },
+        {
+          "id": "restless",
+          "prompt": "Feeling restless",
+          "options": [
+            { "id": "no", "label": "No", "value": 0 },
+            { "id": "yes", "label": "Yes", "value": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outlook",
+      "title": "Outlook",
+      "questions": [
+        {
+          "id": "hopeful",
+          "prompt": "Feeling hopeful about tomorrow",
+          "options": [
+            { "id": "yes", "label": "Yes", "value": 0 },
+            { "id": "unsure", "label": "Unsure", "value": 1 },
+            { "id": "no", "label": "No", "value": 2 }
+          ]
+        }
+      ]
+    }
+  ],
+  "bands": [
+    { "min": 0, "max": 2, "label": "Steady day", "nextSteps": "Nothing more to do today." },
+    { "min": 3, "max": 5, "label": "Rough day", "nextSteps": "Be gentle with yourself today." }
+  ]
+}
