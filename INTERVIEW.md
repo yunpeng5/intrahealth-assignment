@@ -78,23 +78,23 @@ before merge. T1 was the first ticket run end to end through the harness.
 **Result: the second ticket did not cost less in dollars.** T2 cost $2.76 against T1's $2.25,
 with fewer turns. I did not re-run T2 to improve the number; the run was valid.
 
-| | T1 (initialization) | T2 (first feature) | T3 (follow-on, context) | T4 (follow-on, context) |
-|---|---|---|---|---|
-| Run | `T1-20261006T050512Z`, PR #8 | `T2-20261006T072615Z`, PR #11 | `T3-20261006T075113Z`, PR #12 | `T4-20261006T080718Z`, PR #13 |
-| Outcome | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round | approved after 1 revision: 2 attempts, 2 review rounds |
-| Human interventions | none | none | none | none |
-| Review findings | 3 nit | none | 1 nit | round 1: 1 blocking; round 2: 1 nit |
-| **Total cost** | **$2.25** | **$2.76** | **$2.00** | **$1.73** |
-| Maker cost / duration | $1.10 / 11.2 min | $1.65 / 9.2 min | $0.73 / 3.1 min | $0.61 / 4.7 min (initial $0.48, revision $0.14) |
-| Reviewer cost / duration | $1.14 / 2.2 min | $1.10 / 1.8 min | $1.26 / 2.4 min | $1.11 / 2.1 min (two rounds, $0.59 + $0.52) |
-| Model responses / tool calls (`num_turns`) | 42 / 70 (71) | 28 / 50 (51) | 15 / 21 (22) | 19 / 30 (32) |
-| Most tool calls in one response | 5 | 8 | 3 | 5 |
-| Bash / Read / Write+Edit calls | 39 / 11 / 23 | 18 / 17 / 21 | 7 / 17 / 11 | 9 / 18 / 7 |
-| First edit at tool call | 15 | 15 | 6 | 14 |
-| Maker output tokens (incl. thinking) | 22.2k | 46.3k | 15.5k | 16.6k |
-| Maker cache reads / cache writes | 1.73M / 62k | 1.57M / 83k | 0.67M / 58k | 0.53M / 36k |
-| Maker context per response (avg / max) | 43k / 67k | 59k / 88k | 48k / 63k | 30k / 41k |
-| Diff | 29 files, +4326 −4 (3809 lines are `frontend/package-lock.json`) | 17 files, +960 −2 | 8 files, +326 −2 | 7 files, +511 −2 |
+| | T1 (initialization) | T2 (first feature) | T3 (follow-on, context) | T4 (follow-on, context) | T5 (follow-on, context) |
+|---|---|---|---|---|---|
+| Run | `T1-20261006T050512Z`, PR #8 | `T2-20261006T072615Z`, PR #11 | `T3-20261006T075113Z`, PR #12 | `T4-20261006T080718Z`, PR #13 | `T5-20261006T082539Z`, PR #14 |
+| Outcome | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round | approved after 1 revision: 2 attempts, 2 review rounds | approved, 1 attempt, 1 review round |
+| Human interventions | none | none | none | none | none |
+| Review findings | 3 nit | none | 1 nit | round 1: 1 blocking; round 2: 1 nit | 2 nit |
+| **Total cost** | **$2.25** | **$2.76** | **$2.00** | **$1.73** | **$1.34** |
+| Maker cost / duration | $1.10 / 11.2 min | $1.65 / 9.2 min | $0.73 / 3.1 min | $0.61 / 4.7 min (initial $0.48, revision $0.14) | $0.54 / 3.3 min |
+| Reviewer cost / duration | $1.14 / 2.2 min | $1.10 / 1.8 min | $1.26 / 2.4 min | $1.11 / 2.1 min (two rounds, $0.59 + $0.52) | $0.79 / 2.2 min |
+| Model responses / tool calls (`num_turns`) | 42 / 70 (71) | 28 / 50 (51) | 15 / 21 (22) | 19 / 30 (32) | 22 / 32 (33) |
+| Most tool calls in one response | 5 | 8 | 3 | 5 | 4 |
+| Bash / Read / Write+Edit calls | 39 / 11 / 23 | 18 / 17 / 21 | 7 / 17 / 11 | 9 / 18 / 7 | 11 / 12 / 10 |
+| First edit at tool call | 15 | 15 | 6 | 14 | 13 |
+| Maker output tokens (incl. thinking) | 22.2k | 46.3k | 15.5k | 16.6k | 12.3k |
+| Maker cache reads / cache writes | 1.73M / 62k | 1.57M / 83k | 0.67M / 58k | 0.53M / 36k | 0.63M / 34k |
+| Maker context per response (avg / max) | 43k / 67k | 59k / 88k | 48k / 63k | 30k / 41k | 30k / 39k |
+| Diff | 29 files, +4326 −4 (3809 lines are `frontend/package-lock.json`) | 17 files, +960 −2 | 8 files, +326 −2 | 7 files, +511 −2 | 4 files, +231 −3 |
 
 **Why fewer turns but higher cost**
 - **Turns measure tool round trips, not work.** T2 batched more tool calls per response (up to 8)
@@ -132,6 +132,10 @@ with fewer turns. I did not re-run T2 to improve the number; the run was valid.
   cheap cache reads, and $0.52 for the second review. This was the previously unexercised
   revision path, now exercised by a real ticket rather than a staged test.
 
+**T5** (front end, context): the cheapest run ($1.34), a small change to an existing component
+(+231 lines, mostly tests). The maker checked the live API through the Vite proxy but could not
+drive a browser, so the browser-level walkthrough stays a human step (see Known debt).
+
 **What T2 did get from T1** (not visible in dollars)
 - It started from a green baseline with `npm run verify`, the test project, the
   pending-test mechanism and `docs/architecture.md` already in place, and followed them: tests
@@ -161,6 +165,7 @@ with fewer turns. I did not re-run T2 to improve the number; the run was valid.
 | #9 invariant tests | 1 | approve | 4 should-fix, 2 nit | `static readonly` stores missed by the source scan; log check missed "scored 13" wording; GET check was a denylist (a string `points` property passed); database/file denylist incomplete and case-sensitive | **Partly wrong:** said the WC-6 question IDs are "defined nowhere"; they are in Issue #2, which the bot cannot see (the underlying gap, an undocumented default-configuration assumption, was real). **Would have weakened a test:** suggested skipping `bin`/`obj` in the file snapshot, but the test output folder is a `bin` folder and the likeliest leak location. **Missed:** a band range added as text (`"10 to 14: ..."`) passed every check. Note: the review ticket pointed the bot at the scan and score checks. |
 | #9 invariant tests | 2 (after fix round) | approve | 3 should-fix, 3 nit | Two false-positive risks that the leak spike could not show: the log check also scans startup lines and exception stack traces (`:line 13`, machine-specific paths), and the file rule flags a read-only `new FileStream` for loading definitions (D-5). Also: `Console`/`Debug` writes escape both log capture and the source scan; startup file writes are not covered. | **Repeated the partly-wrong ID finding:** said nothing T2 reads states the WC-6 IDs; Issue #2 lists them. _Outcome:_ both false-positive risks and the Console gap were fixed before the tests were protected, verified by a targeted spike rather than a third review pass. |
 | #10 narrow source scan | 1 | approve | 1 should-fix, 1 nit | A Redis-backed output cache (`AddStackExchangeRedisOutputCache`) slipped through the narrowed distributed-cache pattern; the test comment did not say in-memory visitor state is undetected by any test | _Outcome:_ the suggested fix (widen the Redis pattern) was rejected: it would have expanded a technology denylist. The scan was narrowed further instead. |
+| #14 T5 | 1 | approve | 2 nit | The failure alert stays visible after navigating Back; and, correctly, that the maker's "manual check" was an API call through the proxy, not a browser walkthrough, so a human should still check the result screen in a browser. | — |
 | #13 T4 | 1 | request-changes | 1 blocking | **Valid blocking catch:** the questionnaire flow was built and tested but never mounted in `App.tsx`, so the running app showed only a heading; the acceptance tests passed because they rendered the component directly. | — |
 | #13 T4 | 2 (after revision) | approve | 1 nit | Page completeness uses `question.id in answers`, so a question ID like `constructor` would count as answered (exotic but real for data-defined IDs). | — |
 | #12 T3 | 1 | approve | 1 nit | Correctly noted that WC-6's questions share option IDs, so a "cross-question option" cannot be tested over HTTP with WC-6 (a unit test covers it). Checked both protected promotions. | — |
@@ -238,6 +243,12 @@ protected, with a correct fake implementation and deliberate leaks:
   `mkdir` and `rm` without denial, though the docs list only `npm`, `npx`, `dotnet`, `node`,
   `git status` and `git diff` (likely the CLI's read-only allowances plus `acceptEdits`). The
   deterministic gates remained the enforcement layer.
+- **Leftover processes from the maker (T5).** For its live check the maker started
+  `npm run dev:api` and `npm run dev:web` and left both running after the run. The API process
+  locked the back-end build output, so a later `npm run verify` failed until I stopped them. The
+  gate itself passed only because T5 changed no back-end code. Had they still been running at
+  the next ticket's gate, its build would have failed and the failure would have been blamed on
+  that ticket's maker.
 
 ## Known debt
 
@@ -247,6 +258,9 @@ protected, with a correct fake implementation and deliberate leaks:
 - Not yet exercised end to end: the invalid-review-JSON retry and a real timeout (the review
   revision round was exercised by T4). Process-tree termination has only run on Windows.
 - Harness docs understate the maker's effective Bash permissions (see Run observations).
+- The harness does not clean up background processes the maker starts (dev servers left running
+  after T5). Fix: kill the maker's process tree after each call, or forbid long-running
+  commands in the maker prompt and check for listening ports before the gates.
 - Standalone `review` reads `--ticket-file` before checking out the PR.
 - Scope and protected-path gates have no unit tests (signature, parsing and review validation
   do).
@@ -272,6 +286,9 @@ protected, with a correct fake implementation and deliberate leaks:
 - Vitest baseline project drops the default excludes; test `.csproj` has a BOM and an unused
   coverlet package.
 - Scoring method is fixed to `sum` (D-6): a questionnaire that scores differently needs code.
+- No automated browser-level end-to-end test: the full flow is covered by API integration tests
+  and React Testing Library tests, and checked in a browser by hand (Playwright was optional).
+- The submission-failure alert stays visible after navigating Back (T5 review nit).
 - Front-end page completeness uses `question.id in answers`: a question ID matching an
   `Object.prototype` member (e.g. `constructor`) would count as answered (T4 review round 2).
 
