@@ -10,7 +10,6 @@ namespace PulseCheck.Api.Tests.Invariants;
 /// headers, on success or on error, and the success response is exactly { label, nextSteps }.
 /// Pending until T3, which may only remove the Pending trait from this file (D-13).
 /// </summary>
-[Trait("Category", "Pending")]
 public class SubmissionInvariantTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {

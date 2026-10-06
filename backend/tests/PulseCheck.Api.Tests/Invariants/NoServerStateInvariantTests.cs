@@ -14,7 +14,6 @@ namespace PulseCheck.Api.Tests.Invariants;
 /// cannot pass on missing endpoints. In-memory state is covered by NoPersistenceSourceTests.
 /// Pending until T3, which may only remove the Pending trait from this file (D-13).
 /// </summary>
-[Trait("Category", "Pending")]
 public class NoServerStateInvariantTests
 {
     private static async Task<List<HttpResponseMessage>> CompleteFlow(HttpClient client)
