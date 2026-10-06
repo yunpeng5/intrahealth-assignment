@@ -146,7 +146,11 @@ The harness passes `--permission-prompts none`, so anything not allowed is denie
   credentials.
 - Exercised end to end: a review revision round (T4: review round 1 requested changes, the
   resumed maker fixed it, round 2 approved). Not yet exercised end to end: the
-  invalid-review-JSON retry and a real timeout. Process-tree termination is platform-aware (`taskkill /T /F` on Windows,
-  process-group `SIGKILL` on POSIX) but has only been run on Windows.
+  invalid-review-JSON retry and a real timeout. Process-tree termination is platform-aware
+  (`taskkill /T /F` on Windows, process-group `SIGKILL` on POSIX) but has only been run on
+  Windows.
+- Background processes the maker starts are not stopped when its call ends. In T5 the maker
+  left `npm run dev:api` and `npm run dev:web` running, and the API process locked the back-end
+  build until stopped by hand. Stop any such processes before the next run.
 - The harness starts `claude` without a shell, so on Windows it needs the native `claude`
   install; an npm-installed `claude.cmd` is not found.

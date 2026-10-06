@@ -1,12 +1,15 @@
 # Interview notes
 
-> **Working draft.** This file is built from run evidence as the project progresses (PRs, run
-> records under `harness/runs/`, review-bot comments). Sections marked _pending_ are filled
-> in as the remaining tickets run.
->
-> **Status after T3 (PR #12):** the back end for sections 1 and 2 is complete (T1–T3). Sections
-> 1 and 2 are **not** end-to-end complete until the front-end tickets T4 (paged flow) and T5
-> (submit and result) land. Section 3 (stretch) stays out of scope until then (D-14).
+Pulse Check, built through a ticket harness. Project overview and how to run everything:
+[README.md](README.md).
+
+**Status:** requirements sections 1 and 2 are implemented, merged and verified end to end (a
+fresh clone passes `npm run setup` and `npm run verify`, and I walked through the flow in a
+browser). Section 3 (stretch: save and resume) was intentionally not attempted: with the
+deadline close, I spent the remaining time on the required deliverables, reproducibility and
+the walkthrough. Section 3 also changes what the server may store, so doing it properly would
+mean revising the protected no-persistence invariants under an authorizing ticket (D-14), not
+just adding endpoints.
 
 ## Decisions
 
@@ -46,8 +49,9 @@ What the requirements left open, and what I chose. Full list with reasons:
 
 ## Harness
 
-_Sections below are filled in with run evidence; design: [docs/harness-design.md](docs/harness-design.md),
-usage: [harness/README.md](harness/README.md)._
+Design and rationale: [docs/harness-design.md](docs/harness-design.md). Usage:
+[harness/README.md](harness/README.md). Every number below comes from the committed run records
+in `harness/runs/` (`npm --prefix harness run metrics` prints the totals).
 
 ### How it works
 
@@ -152,26 +156,49 @@ drive a browser, so the browser-level walkthrough stays a human step (see Known 
 - "First edit at tool call" is not comparable either: T1's first 14 calls included scaffolding
   commands, while T2's were reading.
 - `num_turns` from the CLI is roughly one per tool call; `--max-turns` limits model round trips.
-  T1 reported 71 turns under a 60-turn limit without hitting it.
+  T1 reported 71 turns under a 60-turn limit without hitting it. The table's turn, token and
+  context rows are the maker's; `npm run metrics` adds the reviewer's turns and tokens.
 
 ## Review bot
+
+The review bot is a separate `claude -p` call (Fable 5.1, a different model from the maker) in a
+fresh context with read-only tools. It reviews each PR against the ticket, the requirements,
+the decisions and the global invariants, returns schema-validated JSON, and posts it to the PR.
+Outputs: `harness/runs/<run-id>/review-*.md` for ticket PRs, and
+[docs/process/reviews/](docs/process/reviews/) for the three PRs reviewed with the standalone
+command.
+
+**Summary**
+- **Caught:** its most valuable catch was in T4. The questionnaire flow was built and fully
+  tested but never mounted in the app, so a visitor could not reach it. The gates passed; the
+  reviewer blocked it, and the revision fixed it with no human involved. On the invariant tests
+  it found real gaps, including two false-positive risks that my own leak spike could not show.
+- **Missed:** that the root `package-lock.json` was not excluded from its own review diff
+  (found in design review), and a score range added as text to a response (found while
+  checking its findings).
+- **Wrong or partly wrong:** twice it said the WC-6 IDs were defined nowhere (they are in Issue
+  #2, which it cannot see); it suggested skipping `bin` in the file check, which would have
+  hidden the likeliest leak location; and it suggested widening a technology denylist that I
+  chose to remove instead.
+- **Passes vary:** a second pass on the same PR found issues the first had not raised. A bot
+  pass is a strong check, not a replacement for a human merge review.
 
 | PR | Pass | Verdict | Findings | Caught | Missed / wrong |
 |---|---|---|---|---|---|
 | #7 harness bootstrap | 1 | approve | 1 should-fix, 4 nit | missing harness unit tests; 3 design-doc inaccuracies; undocumented stop reason; settings/docs mismatch on `git log`; cut-off maker calls not reported in feedback | **Missed** that root `package-lock.json` was not excluded from the review diff (pathspec `**/package-lock.json` matches nested files only), while the note to the reviewer said lock files were excluded. Found in design review. |
 | #7 harness bootstrap | 2 | approve | 2 should-fix, 3 nit | standalone review reads `--ticket-file` before checkout; no tests for scope/protected gates; protected-test authorization accepts globs | **Partly wrong:** cited a README use case for the ticket-file problem that does not apply. Found issues pass 1 had not raised: one pass is not exhaustive. |
 | #8 T1 | 1 | approve | 3 nit | Vitest default excludes dropped; BOM and unused package in test `.csproj`; script location | Correctly judged the script location a ticket constraint, not an agent mistake. Cited a gitignored gate log as evidence (not reproducible from the repo). |
-
 | #9 invariant tests | 1 | approve | 4 should-fix, 2 nit | `static readonly` stores missed by the source scan; log check missed "scored 13" wording; GET check was a denylist (a string `points` property passed); database/file denylist incomplete and case-sensitive | **Partly wrong:** said the WC-6 question IDs are "defined nowhere"; they are in Issue #2, which the bot cannot see (the underlying gap, an undocumented default-configuration assumption, was real). **Would have weakened a test:** suggested skipping `bin`/`obj` in the file snapshot, but the test output folder is a `bin` folder and the likeliest leak location. **Missed:** a band range added as text (`"10 to 14: ..."`) passed every check. Note: the review ticket pointed the bot at the scan and score checks. |
 | #9 invariant tests | 2 (after fix round) | approve | 3 should-fix, 3 nit | Two false-positive risks that the leak spike could not show: the log check also scans startup lines and exception stack traces (`:line 13`, machine-specific paths), and the file rule flags a read-only `new FileStream` for loading definitions (D-5). Also: `Console`/`Debug` writes escape both log capture and the source scan; startup file writes are not covered. | **Repeated the partly-wrong ID finding:** said nothing T2 reads states the WC-6 IDs; Issue #2 lists them. _Outcome:_ both false-positive risks and the Console gap were fixed before the tests were protected, verified by a targeted spike rather than a third review pass. |
 | #10 narrow source scan | 1 | approve | 1 should-fix, 1 nit | A Redis-backed output cache (`AddStackExchangeRedisOutputCache`) slipped through the narrowed distributed-cache pattern; the test comment did not say in-memory visitor state is undetected by any test | _Outcome:_ the suggested fix (widen the Redis pattern) was rejected: it would have expanded a technology denylist. The scan was narrowed further instead. |
-| #14 T5 | 1 | approve | 2 nit | The failure alert stays visible after navigating Back; and, correctly, that the maker's "manual check" was an API call through the proxy, not a browser walkthrough, so a human should still check the result screen in a browser. | — |
+| #11 T2 | 1 | approve | none | Checked the protected promotion (one-line trait removal), D-1 display-only mapping and the D-5/D-6 validation; no findings. A design review found nothing it missed. | — |
+| #12 T3 | 1 | approve | 1 nit | Correctly noted that WC-6's questions share option IDs, so a "cross-question option" cannot be tested over HTTP with WC-6 (a unit test covers it). Checked both protected promotions. | — |
 | #13 T4 | 1 | request-changes | 1 blocking | **Valid blocking catch:** the questionnaire flow was built and tested but never mounted in `App.tsx`, so the running app showed only a heading; the acceptance tests passed because they rendered the component directly. | — |
 | #13 T4 | 2 (after revision) | approve | 1 nit | Page completeness uses `question.id in answers`, so a question ID like `constructor` would count as answered (exotic but real for data-defined IDs). | — |
-| #12 T3 | 1 | approve | 1 nit | Correctly noted that WC-6's questions share option IDs, so a "cross-question option" cannot be tested over HTTP with WC-6 (a unit test covers it). Checked both protected promotions. | — |
-| #11 T2 | 1 | approve | none | Checked the protected promotion (one-line trait removal), D-1 display-only mapping and the D-5/D-6 validation; no findings. A design review found nothing it missed. | — |
+| #14 T5 | 1 | approve | 2 nit | The failure alert stays visible after navigating Back; and, correctly, that the maker's "manual check" was an API call through the proxy, not a browser walkthrough, so a human should still check the result screen in a browser. | — |
 
-_Calibration on planted bugs in a feature PR: pending (after T3)._
+I planned to calibrate the bot on deliberately bugged feature PRs but did not get to it (see
+"two more hours"). The closest evidence is the leak spike on the invariant tests below.
 
 ### Testing the protected tests
 
@@ -210,6 +237,15 @@ protected, with a correct fake implementation and deliberate leaks:
 - Claude Code (Opus 5.5) as the coding agent that built the harness core from the design.
 - Inside the harness: Opus 5.5 as maker, Fable 5.1 as reviewer (a different model in a fresh
   context).
+
+**What I delegated, and what I kept**
+- Delegated: drafting the requirements, decisions, tickets and harness design for my review;
+  building the harness core (a coding agent working from the committed design); implementing
+  every ticket (the maker); reviewing every PR (the review bot); writing the invariant tests
+  (the design assistant, independently of the ticket agents).
+- Kept: scope and design decisions, approving tickets, reviewing every PR before merge, the
+  final call on every review finding, and the browser walkthrough. No product code was written
+  by hand.
 
 **Corrections I made** (to AI proposals, before or during implementation)
 - Removed invented scope: a questionnaire list endpoint and picker proposed for 1.3; a
@@ -252,46 +288,68 @@ protected, with a correct fake implementation and deliberate leaks:
 
 ## Known debt
 
+Each item says where it falls short and how I would fix it.
+
 **Harness**
-- Tool restrictions are workflow containment, not a security boundary: allowed `node`/`npm`
-  execution can bypass them. Real isolation would be a container without credentials.
-- Not yet exercised end to end: the invalid-review-JSON retry and a real timeout (the review
-  revision round was exercised by T4). Process-tree termination has only run on Windows.
-- Harness docs understate the maker's effective Bash permissions (see Run observations).
-- The harness does not clean up background processes the maker starts (dev servers left running
-  after T5). Fix: kill the maker's process tree after each call, or forbid long-running
-  commands in the maker prompt and check for listening ports before the gates.
-- Standalone `review` reads `--ticket-file` before checking out the PR.
-- Scope and protected-path gates have no unit tests (signature, parsing and review validation
-  do).
-- Protected-test authorization accepts globs, not exact paths.
-- Re-running a stopped ticket fails at `git checkout -b` if its branch still exists.
-- Windows needs the native `claude` install (`claude.cmd` is not found).
-- Promotion of protected pending tests: the gate authorizes whole files; that the change is only
-  the `Pending` trait removal is checked by review, not mechanically (D-13).
+- **Not a security boundary.** Tool restrictions are workflow containment: allowed `node`/`npm`
+  execution can bypass them, use the network and read the environment. Fix: run the maker in a
+  container without credentials, with the network limited to package registries.
+- **Leftover background processes.** The harness does not stop processes the maker starts (dev
+  servers left running after T5). Fix: kill the maker's process tree after each call, and check
+  for listening ports before the gates.
+- **Untested paths.** The invalid-review-JSON retry and a real timeout have not run end to end;
+  process-tree termination has only run on Windows. Fix: a fake `claude` executable in the
+  harness tests that returns invalid JSON or hangs.
+- **The docs understate the maker's shell permissions** (see Run observations). Fix: document
+  the CLI's built-in allowances, or deny the extra commands explicitly.
+- **Protected-test promotion is checked by review, not mechanically:** the gate authorizes whole
+  files (D-13), and authorization accepts globs. Fix: a gate check that an authorized
+  protected-file diff only removes the `Pending` trait line, and exact-path matching.
+- **Smaller gaps:** the scope and protected-path gates have no unit tests (fix: test them like
+  the signature and parser); standalone `review` reads `--ticket-file` before checking out the
+  PR (fix: read it after checkout); re-running a stopped ticket fails if its branch exists (fix:
+  check in preflight); Windows needs the native `claude` install (fix: spawn through the shell
+  on Windows).
 
 **Invariant tests**
-- A comment in the protected `NoServerStateInvariantTests.cs` still says in-memory state is
-  covered by `NoPersistenceSourceTests`; that stopped being true when the scan was narrowed
-  (PR #10), and I missed it then. Fixing a protected file's comment needs an authorized change.
-- The source scan covers only file writes, databases, sessions and cookies, and is a list of
-  known APIs, not exhaustive. Not detected by any test, left to D-7 review: in-memory visitor
-  state (a static collection of answers, a cache of results), direct `Console`/`Debug`/`Trace`
-  output, and persistence mechanisms the list does not name.
-- Score checks use WC-6 values (13, partial 15); the file check covers the app's directories,
-  not the whole disk, and can fail spuriously if a build runs during the tests.
+- **In-memory visitor state, direct console output and unlisted persistence APIs** are not
+  detected by any test and are left to review (D-7); the source scan covers only file writes,
+  databases, sessions and cookies. Fix: a runtime check needs a seam in the app (for example,
+  asserting that no singleton service holds request data); until then, review.
+- **WC-6-specific checks:** the score checks use WC-6's values (13, partial 15), and the file
+  check covers the app's directories, not the whole disk. Fix: generate answer sets from the
+  definition so any questionnaire can be checked.
+- **A stale comment** in the protected `NoServerStateInvariantTests.cs` says in-memory state is
+  covered by the source scan, which stopped being true in PR #10. Fix: correct it under a ticket
+  that authorizes that file.
 
 **Product**
-- Root task runner lives in `frontend/scripts/run.mjs` (T1 allowed paths).
-- Vitest baseline project drops the default excludes; test `.csproj` has a BOM and an unused
-  coverlet package.
-- Scoring method is fixed to `sum` (D-6): a questionnaire that scores differently needs code.
-- No automated browser-level end-to-end test: the full flow is covered by API integration tests
-  and React Testing Library tests, and checked in a browser by hand (Playwright was optional).
-- The submission-failure alert stays visible after navigating Back (T5 review nit).
-- Front-end page completeness uses `question.id in answers`: a question ID matching an
-  `Object.prototype` member (e.g. `constructor`) would count as answered (T4 review round 2).
+- **No automated browser-level test.** The flow is covered by API and React Testing Library
+  tests and was checked in a browser by hand. Fix: one Playwright happy-path test in `verify`.
+- **Front-end nits from review:** page completeness uses `question.id in answers`, so a question
+  ID like `constructor` would count as answered (fix: `Object.hasOwn`); the submission-failure
+  alert stays visible after navigating Back (fix: clear it on navigation).
+- **Scoring is fixed to `sum`** (D-6): a questionnaire that scores differently needs code. Fix:
+  named scoring methods selected by the definition, added when a second method is needed.
+- **Housekeeping:** the root task runner lives in `frontend/scripts/run.mjs` because T1's
+  allowed paths had no root `scripts/` folder (fix: move it in a ticket that allows it);
+  Vitest's baseline project drops the default excludes; the test `.csproj` has a BOM and an
+  unused coverlet package.
 
 ## What I would do with two more hours
 
-_pending_
+In order:
+
+1. **Fix the leftover-process bug in the harness** (about 30 min): kill the maker's process tree
+   after each call and check for listening ports before the gates. It is the one harness
+   defect a real run exposed, and it could make a later ticket fail for someone else's mistake.
+2. **Calibrate the review bot on planted bugs** (about 45 min): three branches with one known
+   bug each (the score in a response, answers in a log, an invented extra feature), run the bot,
+   and record the catch rate. That turns "the bot found real issues" into a measured number.
+3. **Add one Playwright happy-path test to `verify`** (about 30 min): load WC-6, page through,
+   submit, and see only the label and message. It automates the browser check I did by hand.
+4. **Run one small ticket for the two front-end nits** (about 15 min): the `in` check and the
+   stale failure alert.
+
+I would not start section 3 in two hours: it changes the persistence invariants, which should be
+revised deliberately first.
