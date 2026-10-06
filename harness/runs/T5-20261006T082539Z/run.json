@@ -1,0 +1,137 @@
+{
+  "runId": "T5-20261006T082539Z",
+  "ticket": {
+    "issue": 5,
+    "id": "T5",
+    "title": "Submit and show the result"
+  },
+  "branch": "ticket/T5-submit-and-show-the-result",
+  "baseSha": "e1b540e1f1fe4a56545407c24e2305fdf7ef6fbd",
+  "harnessSha": "e1b540e1f1fe4a56545407c24e2305fdf7ef6fbd",
+  "startedAt": "2026-10-06T08:25:39.262Z",
+  "finishedAt": "2026-10-06T08:31:39.973Z",
+  "models": {
+    "maker": "claude-opus-5-5",
+    "reviewer": "claude-fable-5-1"
+  },
+  "config": {
+    "makerModel": "claude-opus-5-5",
+    "reviewerModel": "claude-fable-5-1",
+    "maxAttempts": 3,
+    "maxTurnsPerCall": 60,
+    "callTimeoutMinutes": 20,
+    "reviewRevisionRounds": 1,
+    "feedbackTailLines": 150
+  },
+  "parsed": {
+    "acceptance": [
+      "npm run verify"
+    ],
+    "allowedPaths": [
+      "frontend/**",
+      "docs/architecture.md"
+    ],
+    "pendingTests": [],
+    "protectedChanges": []
+  },
+  "makerPrompt": "You are the coding agent for ticket T5 in the Pulse Check repository. CLAUDE.md is\nalready in your context: its hard rules apply in full. The ticket below defines your scope.\n\n## How this run works\n\n- You change files. The harness owns git and GitHub: it creates the branch, commits, pushes and\n  opens the PR. Do not commit, push, switch branches or run `gh`; those commands are denied.\n- You may run `npm`, `npx`, `dotnet` and `node`, plus `git status` and `git diff`.\n- When you finish, the harness checks your work with deterministic gates, in this order, and\n  stops at the first failure:\n  1. **Scope:** every changed, deleted or new file (not ignored by `.gitignore`) matches one of\n     the ticket's allowed paths. This includes files created by the commands you run.\n  2. **Protected paths:** no changes to paths in `harness/protected-paths.txt` unless the ticket\n     authorizes exactly those paths.\n  3. **Acceptance commands:** the ticket's `sh` block, one line at a time from the repository\n     root, through the platform shell (cmd.exe). Every command must exit 0.\n  Scope and protected paths are checked again after the acceptance commands.\n- If a gate fails, the harness sends you the failure in this same session so you can fix it.\n  You have 3 attempts in total. Run the acceptance commands yourself before you\n  finish, so the first attempt passes.\n- After the gates pass, a separate review bot reviews the PR against the ticket, the\n  requirements and the decisions. Its blocking findings may come back to you.\n- Your final message is put in the PR description. End with the summary CLAUDE.md asks for:\n  what you changed, which requirement IDs it covers, how you verified it, and open questions.\n\n## The ticket\n\n<ticket>\n# T5: Submit and show the result\n\n## Goal\n\nA visitor who completes the last page can submit and sees their severity label and next-steps\nmessage, never a number. This completes sections 1 and 2 end to end.\n\n## Requirements\n\n- 2.1, 2.2, 1.6\n- D-2, D-3, D-4, D-15\n\n## Behaviour\n\n- **Submit control:** the last page gets a Submit control. Like the forward control, it is\n  disabled until every question on the page is answered (D-15).\n- **Submitting:** sends a single `POST /api/questionnaires/{id}/submissions` with\n  `{ answers: { questionId: optionId } }`.\n- **Result screen:** shows the returned `label` and `nextSteps`, and no number of any kind\n  derived from the answers.\n- **While submitting:** the control is disabled, so the answers are not sent twice.\n- **On failure:** the visitor sees a plain error message. Their answers are kept so they can\n  try again.\n\n**Tests (React Testing Library, network mocked)**\n- Submit is blocked on an incomplete last page.\n- Exactly one POST is sent, with the expected payload, and only at final submission.\n- The result renders the label and message.\n- The error path keeps the answers.\n\n**Manual check (recorded in the summary):** with both servers running, complete WC-6 once and\nnote the result shown.\n\n## Acceptance commands (parsed)\n\n```sh\nnpm run verify\n```\n\n## Pending tests to promote\n\n- None\n\n## Protected test changes (parsed)\n\n- None\n\n## Allowed paths (parsed)\n\n- frontend/**\n- docs/architecture.md\n\n## Out of scope\n\n- Restarting or retaking flows, sharing or printing results, save and resume (section 3).\n- Any back-end change.\n\n## Notes for the reviewer\n\n- Check that no score, band index or range is computed or displayed in the browser.\n</ticket>\n",
+  "stopReason": "approved",
+  "prUrl": "https://github.com/yunpeng5/intrahealth-assignment/pull/14",
+  "attempts": [
+    {
+      "loop": "initial",
+      "attempt": 1,
+      "call": "maker-initial-1",
+      "passed": true
+    }
+  ],
+  "reviewRounds": 1,
+  "blockingFindings": [
+    0
+  ],
+  "reviewDiffTruncated": [
+    false
+  ],
+  "diffStats": {
+    "files": 4,
+    "insertions": 231,
+    "deletions": 3
+  },
+  "metrics": {
+    "total": {
+      "costUsd": 1.3374565999999999,
+      "turns": 47,
+      "durationMs": 325920,
+      "inputTokens": 270,
+      "outputTokens": 19268,
+      "cacheReadTokens": 823154,
+      "cacheCreationTokens": 65874
+    },
+    "maker": {
+      "costUsd": 0.5432226,
+      "turns": 33,
+      "durationMs": 196442,
+      "inputTokens": 44,
+      "outputTokens": 12293,
+      "cacheReadTokens": 627908,
+      "cacheCreationTokens": 34321
+    },
+    "reviewer": {
+      "costUsd": 0.794234,
+      "turns": 14,
+      "durationMs": 129478,
+      "inputTokens": 226,
+      "outputTokens": 6975,
+      "cacheReadTokens": 195246,
+      "cacheCreationTokens": 31553
+    }
+  },
+  "toolCallsByType": {
+    "Bash": 11,
+    "Read": 12,
+    "Grep": 10,
+    "Edit": 9,
+    "Write": 1,
+    "Glob": 1,
+    "StructuredOutput": 1
+  },
+  "firstEditToolCall": 13,
+  "calls": [
+    {
+      "label": "maker-initial-1",
+      "role": "maker",
+      "model": "claude-opus-5-5",
+      "sessionId": "a785da0d-cefc-427a-aa96-a5bae5ead407",
+      "subtype": "success",
+      "metrics": {
+        "costUsd": 0.5432226,
+        "turns": 33,
+        "durationMs": 196442,
+        "inputTokens": 44,
+        "outputTokens": 12293,
+        "cacheReadTokens": 627908,
+        "cacheCreationTokens": 34321
+      },
+      "toolCalls": 32,
+      "permissionDenials": 3
+    },
+    {
+      "label": "review-1",
+      "role": "reviewer",
+      "model": "claude-fable-5-1",
+      "sessionId": "75a75e3d-4197-4e7d-a303-fbdc3eb23743",
+      "subtype": "success",
+      "metrics": {
+        "costUsd": 0.794234,
+        "turns": 14,
+        "durationMs": 129478,
+        "inputTokens": 226,
+        "outputTokens": 6975,
+        "cacheReadTokens": 195246,
+        "cacheCreationTokens": 31553
+      },
+      "toolCalls": 13,
+      "permissionDenials": 0
+    }
+  ]
+}

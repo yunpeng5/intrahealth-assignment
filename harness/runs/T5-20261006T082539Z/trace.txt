@@ -1,0 +1,45 @@
+#1 [maker-initial-1] Bash cat docs/architecture.md && git ls-files frontend | grep -v node_modules && cat harness/protected-paths.txt
+#2 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment/frontend/src && for f in questionnaire.ts QuestionnairePages.tsx Questi...
+#3 [maker-initial-1] Read frontend/src/questionnaire.ts
+#4 [maker-initial-1] Read frontend/src/QuestionnairePages.tsx
+#5 [maker-initial-1] Read frontend/src/QuestionnaireView.tsx
+#6 [maker-initial-1] Read frontend/src/QuestionnaireView.test.tsx
+#7 [maker-initial-1] Grep ^(#+ |\| ?)?\*?\*?(1\.6|2\.1|2\.2|D-2|D-3|D-4|D-15)\b
+#8 [maker-initial-1] Grep submissions|SubmissionResult|ValidationProblem|NotFound
+#9 [maker-initial-1] Read docs/decisions.md
+#10 [maker-initial-1] Grep ^.*\b(1\.6|2\.1|2\.2)\b
+#11 [maker-initial-1] Read frontend/src/App.test.tsx
+#12 [maker-initial-1] Read frontend/src/App.tsx
+#13 [maker-initial-1] Edit frontend/src/questionnaire.ts
+#14 [maker-initial-1] Write frontend/src/QuestionnairePages.tsx
+#15 [maker-initial-1] Edit frontend/src/QuestionnaireView.test.tsx
+#16 [maker-initial-1] Bash cd /c/stypt/assignment/intrahealth-assignment/frontend/src && sed -i "s|expect(document.body.textContent).not.toMatch...
+#17 [maker-initial-1] Edit frontend/src/QuestionnaireView.test.tsx
+#18 [maker-initial-1] Edit frontend/src/QuestionnaireView.test.tsx
+#19 [maker-initial-1] Edit frontend/src/QuestionnaireView.test.tsx
+#20 [maker-initial-1] Bash npm run verify 2>&1 | tail -40
+#21 [maker-initial-1] Edit frontend/src/QuestionnairePages.tsx
+#22 [maker-initial-1] Edit frontend/src/QuestionnairePages.tsx
+#23 [maker-initial-1] Bash npm --prefix frontend test 2>&1 | grep -E "✓|×|FAIL|Tests " | head -20
+#24 [maker-initial-1] Edit frontend/src/QuestionnairePages.tsx
+#25 [maker-initial-1] Edit docs/architecture.md
+#26 [maker-initial-1] Bash npm run verify 2>&1 | tail -8; git status --short
+#27 [maker-initial-1] Bash npm run dev:api
+#28 [maker-initial-1] Bash npm run dev:web
+#29 [maker-initial-1] Read ../../../Users/sttyp/AppData/Local/Temp/claude/C--stypt-assignment-intrahealth-assignment/a785da0d-cefc-427a-aa96-a5b...
+#30 [maker-initial-1] Bash curl -s http://localhost:5173/api/questionnaires/wc-6; echo; curl -s -i -X POST http://localhost:5173/api/questionnai...
+#31 [maker-initial-1] Bash node -e "const a={tired:'more-than-half',sleep:'not-at-all',nervous:'nearly-every-day',interest:'several-days',concen...
+#32 [maker-initial-1] Bash node -e "const b='http://localhost:5173/api/questionnaires/wc-6';fetch(b).then(r=>r.json()).then(async q=>{const a={}...
+#33 [review-1] Read frontend/src/QuestionnairePages.tsx
+#34 [review-1] Read frontend/src/QuestionnaireView.test.tsx
+#35 [review-1] Read frontend/src/questionnaire.ts
+#36 [review-1] Glob harness/runs/T5-20261006T082539Z/**
+#37 [review-1] Read frontend/src/QuestionnaireView.tsx
+#38 [review-1] Grep [Mm]anual check
+#39 [review-1] Grep (Tests|Test Files|passed|failed|Passed!|Failed!)[^\\"]{0,80}
+#40 [review-1] Grep Manual check[^\\]{0,400}
+#41 [review-1] Grep The response was \*\*200[^\\]{0,600}
+#42 [review-1] Grep "id":\s*"(concentrat\w+|piling-up)"
+#43 [review-1] Grep \\"label\\":\s*\\"[^\\]+\\",\s*\\"nextSteps\\":\s*\\"[^\\]+\\"[^\\]{0,200}
+#44 [review-1] Grep 200 `\{.{0,40}(Doing well|Some strain|Under pressure|Struggling).{0,160}
+#45 [review-1] StructuredOutput 
