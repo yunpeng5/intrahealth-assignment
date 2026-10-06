@@ -74,23 +74,23 @@ before merge. T1 was the first ticket run end to end through the harness.
 **Result: the second ticket did not cost less in dollars.** T2 cost $2.76 against T1's $2.25,
 with fewer turns. I did not re-run T2 to improve the number; the run was valid.
 
-| | T1 (initialization) | T2 (first feature) |
-|---|---|---|
-| Run | `T1-20261006T050512Z`, PR #8 | `T2-20261006T072615Z`, PR #11 |
-| Outcome | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round |
-| Human interventions | none | none |
-| Review findings | 3 nit | none |
-| **Total cost** | **$2.25** | **$2.76** |
-| Maker cost / duration | $1.10 / 11.2 min | $1.65 / 9.2 min |
-| Reviewer cost / duration | $1.14 / 2.2 min | $1.10 / 1.8 min |
-| Model responses / tool calls (`num_turns`) | 42 / 70 (71) | 28 / 50 (51) |
-| Most tool calls in one response | 5 | 8 |
-| Bash / Read / Write+Edit calls | 39 / 11 / 23 | 18 / 17 / 21 |
-| First edit at tool call | 15 | 15 |
-| Maker output tokens (incl. thinking) | 22.2k | 46.3k |
-| Maker cache reads / cache writes | 1.73M / 62k | 1.57M / 83k |
-| Maker context per response (avg / max) | 43k / 67k | 59k / 88k |
-| Diff | 29 files, +4326 −4 (3809 lines are `frontend/package-lock.json`) | 17 files, +960 −2 |
+| | T1 (initialization) | T2 (first feature) | T3 (follow-on, context) |
+|---|---|---|---|
+| Run | `T1-20261006T050512Z`, PR #8 | `T2-20261006T072615Z`, PR #11 | `T3-20261006T075113Z`, PR #12 |
+| Outcome | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round | approved, 1 attempt, 1 review round |
+| Human interventions | none | none | none |
+| Review findings | 3 nit | none | 1 nit |
+| **Total cost** | **$2.25** | **$2.76** | **$2.00** |
+| Maker cost / duration | $1.10 / 11.2 min | $1.65 / 9.2 min | $0.73 / 3.1 min |
+| Reviewer cost / duration | $1.14 / 2.2 min | $1.10 / 1.8 min | $1.26 / 2.4 min |
+| Model responses / tool calls (`num_turns`) | 42 / 70 (71) | 28 / 50 (51) | 15 / 21 (22) |
+| Most tool calls in one response | 5 | 8 | 3 |
+| Bash / Read / Write+Edit calls | 39 / 11 / 23 | 18 / 17 / 21 | 7 / 17 / 11 |
+| First edit at tool call | 15 | 15 | 6 |
+| Maker output tokens (incl. thinking) | 22.2k | 46.3k | 15.5k |
+| Maker cache reads / cache writes | 1.73M / 62k | 1.57M / 83k | 0.67M / 58k |
+| Maker context per response (avg / max) | 43k / 67k | 59k / 88k | 48k / 63k |
+| Diff | 29 files, +4326 −4 (3809 lines are `frontend/package-lock.json`) | 17 files, +960 −2 | 8 files, +326 −2 |
 
 **Why fewer turns but higher cost**
 - **Turns measure tool round trips, not work.** T2 batched more tool calls per response (up to 8)
@@ -106,6 +106,16 @@ with fewer turns. I did not re-run T2 to improve the number; the run was valid.
   invariant tests, which are its contract, and wrote larger files.
 - **The review cost is a fixed overhead per ticket** (about $1.10 both times), around 40–50% of
   each total.
+
+**T3 as a follow-on data point** (it does not change the T1/T2 result)
+- T3 is the closest comparison to T2: another back-end feature on the same code. It cost
+  $2.00, with the maker at $0.73 and 3.1 minutes, and its first edit came at tool call 6.
+- Most of the difference is the work itself: 326 lines against T2's 960, extending an
+  existing feature folder rather than creating one, with the invariant tests already written as
+  its contract. Orientation was short: five batched reads of the docs, the existing
+  questionnaire code and the invariants.
+- The review cost more than the maker for the first time ($1.26 vs $0.73). The review is close
+  to a fixed cost per ticket (about $1.10–1.30), so for small tickets it dominates the total.
 
 **What T2 did get from T1** (not visible in dollars)
 - It started from a green baseline with `npm run verify`, the test project, the
@@ -136,6 +146,7 @@ with fewer turns. I did not re-run T2 to improve the number; the run was valid.
 | #9 invariant tests | 1 | approve | 4 should-fix, 2 nit | `static readonly` stores missed by the source scan; log check missed "scored 13" wording; GET check was a denylist (a string `points` property passed); database/file denylist incomplete and case-sensitive | **Partly wrong:** said the WC-6 question IDs are "defined nowhere"; they are in Issue #2, which the bot cannot see (the underlying gap, an undocumented default-configuration assumption, was real). **Would have weakened a test:** suggested skipping `bin`/`obj` in the file snapshot, but the test output folder is a `bin` folder and the likeliest leak location. **Missed:** a band range added as text (`"10 to 14: ..."`) passed every check. Note: the review ticket pointed the bot at the scan and score checks. |
 | #9 invariant tests | 2 (after fix round) | approve | 3 should-fix, 3 nit | Two false-positive risks that the leak spike could not show: the log check also scans startup lines and exception stack traces (`:line 13`, machine-specific paths), and the file rule flags a read-only `new FileStream` for loading definitions (D-5). Also: `Console`/`Debug` writes escape both log capture and the source scan; startup file writes are not covered. | **Repeated the partly-wrong ID finding:** said nothing T2 reads states the WC-6 IDs; Issue #2 lists them. _Outcome:_ both false-positive risks and the Console gap were fixed before the tests were protected, verified by a targeted spike rather than a third review pass. |
 | #10 narrow source scan | 1 | approve | 1 should-fix, 1 nit | A Redis-backed output cache (`AddStackExchangeRedisOutputCache`) slipped through the narrowed distributed-cache pattern; the test comment did not say in-memory visitor state is undetected by any test | _Outcome:_ the suggested fix (widen the Redis pattern) was rejected: it would have expanded a technology denylist. The scan was narrowed further instead. |
+| #12 T3 | 1 | approve | 1 nit | Correctly noted that WC-6's questions share option IDs, so a "cross-question option" cannot be tested over HTTP with WC-6 (a unit test covers it). Checked both protected promotions. | — |
 | #11 T2 | 1 | approve | none | Checked the protected promotion (one-line trait removal), D-1 display-only mapping and the D-5/D-6 validation; no findings. A design review found nothing it missed. | — |
 
 _Calibration on planted bugs in a feature PR: pending (after T3)._
@@ -229,6 +240,9 @@ protected, with a correct fake implementation and deliberate leaks:
   the `Pending` trait removal is checked by review, not mechanically (D-13).
 
 **Invariant tests**
+- A comment in the protected `NoServerStateInvariantTests.cs` still says in-memory state is
+  covered by `NoPersistenceSourceTests`; that stopped being true when the scan was narrowed
+  (PR #10), and I missed it then. Fixing a protected file's comment needs an authorized change.
 - The source scan covers only file writes, databases, sessions and cookies, and is a list of
   known APIs, not exhaustive. Not detected by any test, left to D-7 review: in-memory visitor
   state (a static collection of answers, a cache of results), direct `Console`/`Debug`/`Trace`
