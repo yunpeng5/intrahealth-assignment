@@ -112,7 +112,7 @@ export function excerpt(run: GateRun): Omit<GateRun, "failure"> {
   return { passed: run.passed, signature: run.signature, results: run.results.map(cut) };
 }
 
-function signature(r: GateResult): string {
+export function signature(r: GateResult): string {
   let key: string;
   if (r.gate !== "acceptance") {
     key = (r.files ?? []).join("\n");

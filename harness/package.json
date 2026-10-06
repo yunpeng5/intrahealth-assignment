@@ -9,6 +9,7 @@
     "ticket": "node src/run-ticket.ts",
     "review": "node src/review.ts",
     "metrics": "node src/metrics.ts",
+    "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
