@@ -46,6 +46,11 @@ global.json, .nvmrc                     pin .NET 10 SDK (newer feature bands all
 - Components are `PascalCase.tsx` in `frontend/src/`; a test sits next to its subject as
   `<Name>.test.tsx`. Tests use React Testing Library queries by role/label, not internals.
 - Import `describe`/`it`/`expect` from `vitest` explicitly (no globals).
+- Questionnaire flow: `questionnaire.ts` holds the display-only types (D-1), the
+  `?questionnaire=<id>` lookup with the `wc-6` default (D-9) and the single GET call.
+  `QuestionnaireView.tsx` loads once and shows a plain error on failure; `QuestionnairePages.tsx`
+  shows one page at a time, with answers (question ID → option ID) in React state only (D-3, D-4,
+  D-15). The front end holds no option values or scoring logic.
 - Calls to the back end use relative `/api/...` URLs. In development the Vite dev server
   proxies `/api` to `http://localhost:5132` (D-11), so no CORS setup is needed.
 - ESLint (`eslint.config.js`) runs with `--max-warnings 0`; TypeScript is checked with `tsc -b`.
