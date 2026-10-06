@@ -231,7 +231,7 @@ function commitAndPush(message: string): void {
 function openPr(r: Run): string {
   const t = r.ticket;
   const body = [
-    t.issue !== null ? `Closes #${t.issue}\n` : "",
+    ...(t.issue !== null ? [`Closes #${t.issue}\n`] : []),
     "## Agent summary\n",
     r.lastSummary.trim() || "_The maker returned no summary._",
     "\n## Gates\n",

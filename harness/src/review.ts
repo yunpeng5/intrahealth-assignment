@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runClaude, type CallResult } from "./claude.ts";
-import { fill, loadConfig, readPrompt, REPO_ROOT, RUNS_DIR, type Config } from "./config.ts";
+import { fill, loadConfig, readPrompt, REPO_ROOT, repoPath, RUNS_DIR, type Config } from "./config.ts";
 import { protectedPatterns } from "./gates.ts";
 import { commentPr, viewIssue, viewPr, type PrInfo } from "./gh.ts";
 import { currentBranch, git, isClean } from "./git.ts";
@@ -253,7 +253,7 @@ async function main(): Promise<void> {
     if (pr && post) commentPr(String(pr.number), resolve(dir, "review.md"));
     console.log(md);
     const cost = calls.reduce((s, c) => s + c.metrics.costUsd, 0);
-    console.log(`\nWritten to ${dir}${pr && post ? `; posted to ${pr.url}` : ""}. Cost $${cost.toFixed(2)}.`);
+    console.log(`\nWritten to ${repoPath(dir)}${pr && post ? `; posted to ${pr.url}` : ""}. Cost $${cost.toFixed(2)}.`);
   } finally {
     git("checkout", original);
   }
