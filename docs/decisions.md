@@ -130,6 +130,13 @@ The front end loads the questionnaire named by the `?questionnaire=<id>` query p
 falling back to a configured default (`wc-6`). A second questionnaire is reachable by URL with
 no code change. There is no list endpoint, picker or start page; 1.3 does not require one.
 
+### D-15 An incomplete page simply blocks moving forward — Accepted
+Requirements: 1.4, S-1
+
+The forward control (and, on the last page, the Submit control) is disabled until every question
+on the current page is answered. 1.4 only requires that moving forward is blocked; pointing out
+which questions are unanswered is not required.
+
 ### Considered, not adopted
 - **A questionnaire list endpoint and picker.** 1.3 asks that questionnaires be data; it does
   not ask for a way to browse them (S-1).

@@ -36,6 +36,11 @@ npm run verify
 <!-- Pending tests this ticket must make pass and move into the baseline. "None" if none. -->
 - None
 
+## Protected test changes (parsed)
+
+<!-- "None", or the protected test paths this ticket authorizes changing and why (D-13). -->
+- None
+
 ## Allowed paths (parsed)
 
 <!-- Globs the agent may change. Anything else is flagged as out of scope. -->
