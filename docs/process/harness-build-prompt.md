@@ -28,6 +28,9 @@ attribution lines).
 - Do not change `docs/requirements.md`, `docs/decisions.md`, or the hard rules in `CLAUDE.md`.
 - Before relying on any `claude` CLI flag, check it with `claude --help`. If a flag in the
   design does not exist, choose the closest supported mechanism.
+- Confirm in your scratch runs that both configured model identifiers are accepted by the CLI.
+- The harness runs from its own package (`npm --prefix harness ...`) and must not depend on a
+  root `package.json`, which T1 creates later.
 - If you deviate from the design for any reason, update `docs/harness-design.md` in the same PR
   so it describes what you built, and list the deviation in your hand-back.
 - Keep it small and readable. No dependencies beyond TypeScript tooling unless clearly needed.

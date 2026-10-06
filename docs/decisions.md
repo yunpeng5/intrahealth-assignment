@@ -86,9 +86,11 @@ Requirements: 1.1, 1.2, 1.3
   at fixture directories. Adding or re-paging a questionnaire means adding or editing a file.
 - All files are loaded and checked when the app starts. An invalid definition stops startup
   with an error naming the file and the problem.
-- Startup checks: unique IDs (questionnaire, page, question, option within a question); every
-  page has at least one question; every question has at least two options; option values are
-  integers (D-6); bands follow the rules in D-6.
+- Startup checks are limited to what correct behaviour depends on: unique IDs (questionnaire,
+  page, question, option within a question) so answers map unambiguously; every question has at
+  least one option, so it can be answered (2.1); option values are integers (D-6); bands follow
+  the rules in D-6, so every possible score has a label (2.2). Other shape rules (minimum
+  questions per page, minimum options per question) are not required and are not enforced.
 - Reading definition files at startup is not persistence. The server never writes them.
 
 ### D-6 Integer scoring, declared in the data — Accepted
@@ -109,7 +111,9 @@ Requirements: 1.1, 1.2, 1.3
 ### D-7 Strict non-persistence — Accepted
 Requirements: 2.3, T-2
 
-In sections 1 and 2, the server keeps nothing about a questionnaire:
+In sections 1 and 2, the server keeps nothing about a visitor's questionnaire. This covers
+answers and anything derived from them or tied to them; questionnaire definitions are read-only
+data (D-5) and are not affected.
 
 - No database, no file writes, and no server-side session, cache or in-memory store holding
   answers, scores, labels or progress.

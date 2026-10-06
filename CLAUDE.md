@@ -17,10 +17,12 @@ severity label and next-steps message. React + TypeScript front end, ASP.NET Cor
   required. If something seems missing, write it under "Open questions" in your summary and
   carry on without it.
 - **Section 3 (stretch) is off limits** unless your ticket explicitly authorizes it (D-14).
-- **Nothing about a questionnaire is persisted on the server**: no database, files, session,
-  cache, cookies or identifiers, and no logging of answers, scores or labels (D-7).
-- **The numeric score never leaves the server.** Option values and severity bands never reach
-  the browser (D-1, D-8).
+- **Nothing about a visitor's questionnaire is persisted on the server**: no answers, scores,
+  labels, progress, submission state or identifiers in a database, files, session, cache or
+  cookies, and none of them in logs (D-7). Reading questionnaire definition files is fine.
+- **The numeric score never leaves the server.** Option values, band ranges and other scoring
+  data never reach the browser. The only scoring output it receives is the final label and
+  next-steps message on submission (D-1, D-2, D-8).
 - **Never modify protected tests** (paths listed in `harness/protected-paths.txt`) unless your
   ticket explicitly authorizes changing them (D-13).
 - Do not edit `docs/requirements.md` or `docs/decisions.md` unless your ticket says to.

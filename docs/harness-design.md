@@ -65,16 +65,23 @@ if avoidable.
 ```
 
 The reviewer uses a different model from the maker, in a fresh context. That separation is
-the point; the reviewer is not required to be the stronger model.
+the point; the reviewer is not required to be the stronger model. The model identifiers must be
+confirmed to work with the installed `claude` CLI during the scratch runs, not assumed.
 
 ## Commands
 
+The harness is a self-contained package with its own `package.json`, run from the repo root
+with `--prefix`. It does not depend on the root `package.json`, which T1 creates.
+
 ```sh
-npm run ticket -- <issue-number>          # full run
-npm run ticket -- --ticket-file <path>    # same, from a saved ticket snapshot (re-run)
-npm run review -- <pr-number | branch>    # review bot only (re-review, calibration branches)
-npm run metrics                           # summary table across committed run records
+npm --prefix harness install                                # once
+npm --prefix harness run ticket -- <issue-number>           # full run
+npm --prefix harness run ticket -- --ticket-file <path>     # same, from a saved ticket snapshot (re-run)
+npm --prefix harness run review -- <pr-number | branch>     # review bot only (re-review, calibration branches)
+npm --prefix harness run metrics                            # summary table across committed run records
 ```
+
+Paths given to and reported by the harness are relative to the repo root, not `harness/`.
 
 ## run-ticket flow
 
@@ -148,6 +155,8 @@ npm run metrics                           # summary table across committed run r
   1. Every requirement and decision ID the ticket cites: met, not met, or not applicable, with
      evidence.
   2. **Always** the global invariants (T-1, T-2, D-1, D-7, D-8), whatever the ticket says.
+     Each gets a status in `requirements`; `n/a` with a reason is valid when the code it
+     constrains doesn't exist yet (for example, no questionnaire endpoints in T1).
   3. Scope: any change that doesn't trace back to the ticket is a finding (invented
      requirement or tangent). The bot must **not** propose features or polish beyond the
      requirements (S-1).
