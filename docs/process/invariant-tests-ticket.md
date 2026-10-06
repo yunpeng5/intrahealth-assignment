@@ -52,6 +52,7 @@ npm run verify
 
 - backend/tests/PulseCheck.Api.Tests/Invariants/**
 - docs/process/invariant-tests-ticket.md
+- docs/decisions.md (D-13 only: the promotion limit, added after the first review)
 
 ## Out of scope
 

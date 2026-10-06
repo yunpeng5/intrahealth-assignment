@@ -15,7 +15,7 @@ public class SubmissionInvariantTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
     [Fact]
-    public async Task Successful_submission_returns_exactly_label_and_next_steps()
+    public async Task Successful_submission_returns_exactly_the_expected_label_and_next_steps()
     {
         using var client = factory.CreateClient();
         using var response = await Wc6.Submit(client, Wc6.AnswersScoring13());
@@ -27,25 +27,29 @@ public class SubmissionInvariantTests(WebApplicationFactory<Program> factory)
         Assert.True(names.SequenceEqual(["label", "nextSteps"]),
             $"INVARIANT VIOLATION (D-2): the submission response has properties [{string.Join(", ", names)}]; " +
             "it must have exactly label and nextSteps. FIX: return only those two strings.");
-        Assert.Equal(JsonValueKind.String, json.GetProperty("label").ValueKind);
-        Assert.Equal(JsonValueKind.String, json.GetProperty("nextSteps").ValueKind);
-        Assert.Contains(json.GetProperty("label").GetString(), Wc6.Labels);
+
+        // Exact values, so a score, band index or range added to either string fails ("10 to 14 ...").
+        var label = json.GetProperty("label");
+        var nextSteps = json.GetProperty("nextSteps");
+        Assert.True(label.ValueKind == JsonValueKind.String && label.GetString() == Wc6.LabelFor13,
+            $"INVARIANT VIOLATION (D-2, T-1): label is {label.GetRawText()}, expected \"{Wc6.LabelFor13}\" exactly. " +
+            "FIX: return the band's label unchanged, with nothing added.");
+        Assert.True(nextSteps.ValueKind == JsonValueKind.String && nextSteps.GetString() == Wc6.NextStepsFor13,
+            $"INVARIANT VIOLATION (D-2, T-1): nextSteps is {nextSteps.GetRawText()}, expected \"{Wc6.NextStepsFor13}\" exactly. " +
+            "FIX: return the band's next-steps message unchanged, with nothing added.");
     }
 
     [Fact]
-    public async Task Successful_submission_contains_no_numbers_and_no_score()
+    public async Task Successful_submission_contains_no_json_numbers()
     {
         using var client = factory.CreateClient();
         using var response = await Wc6.Submit(client, Wc6.AnswersScoring13());
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var raw = await response.Content.ReadAsStringAsync();
 
-        var numbers = Json.Numbers(JsonDocument.Parse(raw).RootElement);
+        var numbers = Json.Numbers(JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement);
         Assert.True(numbers.Count == 0,
             $"INVARIANT VIOLATION (T-1, 2.4): the submission response contains numbers: {string.Join("; ", numbers)}. " +
             "FIX: return only the label and next-steps message; never the score, a band index or a range.");
-        Assert.False(Regex.IsMatch(raw, @"\b13\b"),
-            "INVARIANT VIOLATION (T-1): the submission response contains the score 13 as text. FIX: never return the score.");
     }
 
     [Fact]

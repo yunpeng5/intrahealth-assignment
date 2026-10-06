@@ -1,8 +1,9 @@
 # Protected invariant tests
 
 The critical product invariants, written outside the feature tickets and reviewed by a human
-(D-13). Feature agents must not change these files unless their ticket's "Protected test
-changes" section explicitly authorizes it.
+(D-13). The five `.cs` files are listed in `harness/protected-paths.txt`: feature agents must not
+change them unless their ticket's "Protected test changes" section explicitly authorizes it.
+This README is not protected.
 
 All tests are **black-box**: they use only URLs and the JSON contract in
 `docs/decisions.md` (D-1, D-2) and never reference application types, so they compile before
@@ -11,25 +12,53 @@ the features exist. Tests that need endpoints not built yet carry `[Trait("Categ
 
 | File | Protects | Status |
 |---|---|---|
-| `NoPersistenceSourceTests.cs` | T-2, D-7: no file writes, databases, caches, sessions/cookies, request-body logging or in-memory stores in `backend/src` (static scan; reading files is allowed) | baseline |
-| `QuestionnaireContractInvariantTests.cs` | D-1, 2.4: the GET questionnaire response has no numbers, no scoring properties, no severity labels or next-steps text, and still offers every question and option by ID | pending until T2 |
-| `SubmissionInvariantTests.cs` | T-1, 2.2, 2.4, D-2, D-8: the submission response is exactly `{ label, nextSteps }`, contains no numbers or score, no score in headers; an invalid submission echoes no option IDs, partial score or label | pending until T3 |
+| `NoPersistenceSourceTests.cs` | T-2, D-7: no known file-write, database, cache, session/cookie, request-body-logging or visitor-state-store patterns in `backend/src` (static, heuristic scan) | baseline |
+| `QuestionnaireContractInvariantTests.cs` | D-1, 2.4: the GET questionnaire response has only the properties D-1 defines, no numbers, no severity labels or next-steps text, and still offers every question and option by ID | pending until T2 |
+| `SubmissionInvariantTests.cs` | T-1, 2.2, 2.4, D-2, D-8: a known WC-6 answer set returns exactly `{ label, nextSteps }` with the expected values and no JSON numbers; no score in non-standard headers; an invalid submission echoes no option IDs, partial score or label | pending until T3 |
 | `NoServerStateInvariantTests.cs` | T-2, 2.3, D-7: completing the flow (load, valid submit, invalid submit) writes no files, sets no cookies, and logs nothing derived from answers (all log levels captured) | pending until T3 |
-| `InvariantSupport.cs` | shared WC-6 fixture (IDs, labels, answers scoring 13 and a partial 15), JSON helpers, log capture, file snapshots | — |
+| `InvariantSupport.cs` | shared WC-6 fixture, JSON helpers, log capture, file snapshots | — |
 
-**Promotion.** T2 and T3 make their pending tests pass and then remove the `Pending` trait from
-exactly the files listed above. That edit is the only change their tickets authorize to these
-files.
+## Contract on the shipped WC-6 definition
 
-**Limits.** In-memory state between requests is checked only statically (concurrent collections,
-mutable static collections) and by review. The file check covers the app's content root and the
-test output directory, not the whole disk. The tests use WC-6 data; their score checks rely on
-WC-6's labels and messages containing no digits.
+The tests run against the app's **default configuration**, which must serve the shipped WC-6
+definition at `/api/questionnaires/wc-6`. They rely on the IDs fixed in T2 and on the WC-6 text
+in `docs/requirements.md`:
 
-**How they were checked.** Before review, the pending tests were run against a throwaway
-`Program.cs` (not committed): a correct fake implementation passed all 11, and seven deliberate
-leaks (option values in the GET response, score in the body, partial score in an error, score in
-a header, score in a log, a cookie, a file write) each failed exactly the intended test. The
-same run exposed a false positive, now fixed: ProblemDetails' standard `type` URI
-(`...rfc9110#section-15.5.1`) matched the partial-score check. The static scan caught the fake's
-file write and cookie.
+- Questionnaire `wc-6`; questions `tired`, `sleep`, `nervous`, `interest`, `concentration`,
+  `piling-up`; options `not-at-all` (0), `several-days` (1), `more-than-half` (2),
+  `nearly-every-day` (3).
+- The answer set scoring 13 must return exactly `Under pressure` and
+  `It may help to talk to someone. You can request care from this portal.`
+
+## Promotion
+
+T2 and T3 make their pending tests pass, then remove the `Pending` trait from exactly the files
+listed above. Their tickets authorize those files in "Protected test changes" for that purpose
+only. **Limit:** the protected-path gate authorizes whole files, not the exact edit. That the
+change is only the trait removal is checked by the review bot and the human merge review, not
+mechanically.
+
+## Limits
+
+- **The source scan is heuristic.** It is a denylist of common APIs and patterns, not an
+  exhaustive proof, and it does not replace review. It is aimed at visitor state: concurrent
+  collections and static mutable collections are flagged; immutable lookup data
+  (`IReadOnlyDictionary`, `FrozenDictionary`, arrays) is not, so questionnaire definitions
+  should be held in immutable types. Comment lines are ignored.
+- **In-memory state** between requests is otherwise only covered by review.
+- **The file check** covers the app's content root and the test output directory (both
+  including `bin`/`obj`), not the whole disk. A build running at the same time as the tests
+  (an IDE background build, `dotnet watch`) can cause a spurious failure; re-run without it.
+- **Score checks use WC-6 values:** the score 13 and partial score 15. In logs, elapsed times
+  (`13.4ms`) are removed before matching a standalone `13` or `15`; in error responses, the
+  standard ProblemDetails `type` URI and `status` code are ignored.
+
+## How they were checked
+
+Before review, the pending tests were run against a throwaway `Program.cs` (not committed): a
+correct fake implementation passed all of them, and deliberate leaks each failed exactly the
+intended test. Leaks covered: option values, a string-valued `points` property, the score in the
+body, a band range appended to `nextSteps`, a partial score in an error, the score in a header,
+the score in a log in two wordings, a cookie, a file write, and a `static readonly` store (caught
+by the source scan). The first spike exposed a false positive, since fixed: ProblemDetails'
+standard `type` URI (`...rfc9110#section-15.5.1`) matched the partial-score check.

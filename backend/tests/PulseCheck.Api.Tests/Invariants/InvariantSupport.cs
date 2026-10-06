@@ -30,6 +30,11 @@ internal static class Wc6
         "Please consider reaching out for support soon. If you are in crisis, contact a crisis line now.",
     ];
 
+    /// <summary>The exact result for <see cref="AnswersScoring13"/> (score 13, band 10 to 14), from docs/requirements.md.</summary>
+    public const string LabelFor13 = "Under pressure";
+
+    public const string NextStepsFor13 = "It may help to talk to someone. You can request care from this portal.";
+
     /// <summary>Answers with a total score of 13 ("Under pressure"): 3 + 3 + 3 + 2 + 2 + 0.</summary>
     public static Dictionary<string, string> AnswersScoring13() => new()
     {

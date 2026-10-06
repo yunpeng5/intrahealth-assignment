@@ -13,8 +13,9 @@ namespace PulseCheck.Api.Tests.Invariants;
 public class QuestionnaireContractInvariantTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
-    private static readonly string[] ForbiddenPropertyNames =
-        ["value", "values", "score", "scoring", "band", "bands", "min", "max", "range", "nextSteps", "severity", "weight"];
+    /// <summary>Every property D-1 defines for the GET response; anything else could carry scoring data.</summary>
+    private static readonly string[] AllowedPropertyNames =
+        ["id", "title", "instructions", "pages", "questions", "prompt", "options", "label"];
 
     private async Task<(string Raw, JsonElement Json)> GetWc6()
     {
@@ -37,15 +38,15 @@ public class QuestionnaireContractInvariantTests(WebApplicationFactory<Program> 
     }
 
     [Fact]
-    public async Task Questionnaire_response_has_no_scoring_properties()
+    public async Task Questionnaire_response_has_only_display_properties()
     {
         var (_, json) = await GetWc6();
 
-        var names = Json.PropertyNames(json);
-        var leaked = ForbiddenPropertyNames.Where(names.Contains).ToList();
-        Assert.True(leaked.Count == 0,
-            $"INVARIANT VIOLATION (D-1): the questionnaire response has scoring properties: {string.Join(", ", leaked)}. " +
-            "FIX: map the definition to a display-only DTO (IDs, titles, prompts, option labels).");
+        var unexpected = Json.PropertyNames(json).Where(name => !AllowedPropertyNames.Contains(name)).OrderBy(n => n).ToList();
+        Assert.True(unexpected.Count == 0,
+            $"INVARIANT VIOLATION (D-1): the questionnaire response has properties outside the D-1 contract: {string.Join(", ", unexpected)}. " +
+            $"Allowed: {string.Join(", ", AllowedPropertyNames)}. " +
+            "FIX: map the definition to a display-only DTO (IDs, titles, instructions, prompts, option labels).");
     }
 
     [Fact]

@@ -80,10 +80,14 @@ public class NoServerStateInvariantTests
         {
             ("a submitted option ID", new Regex(string.Join("|", Wc6.OptionIds.Select(Regex.Escape)), RegexOptions.IgnoreCase)),
             ("a severity label", new Regex(string.Join("|", Wc6.Labels.Select(Regex.Escape)), RegexOptions.IgnoreCase)),
-            ("the score", new Regex(@"(score|total|sum|result)\W{0,3}(13|15)\b", RegexOptions.IgnoreCase)),
+            // The score (13) or partial score (15) as a standalone number, in any wording.
+            ("the score", new Regex(@"\b(13|15)\b")),
         };
+        // Elapsed times ("13.4ms", "15 ms") are framework output, not scores: removed before matching.
+        var elapsed = new Regex(@"\b\d+(\.\d+)?\s*ms\b", RegexOptions.IgnoreCase);
         var leaks = capture.Messages
-            .SelectMany(message => forbidden.Where(f => f.Pattern.IsMatch(message)).Select(f => $"{f.What} in: {message}"))
+            .Select(message => (Original: message, Checked: elapsed.Replace(message, "<elapsed>")))
+            .SelectMany(m => forbidden.Where(f => f.Pattern.IsMatch(m.Checked)).Select(f => $"{f.What} in: {m.Original}"))
             .ToList();
         Assert.True(leaks.Count == 0,
             $"INVARIANT VIOLATION (D-7): logs contain data derived from answers: {string.Join(" || ", leaks)}. " +
