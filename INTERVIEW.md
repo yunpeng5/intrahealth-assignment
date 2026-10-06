@@ -3,6 +3,10 @@
 > **Working draft.** This file is built from run evidence as the project progresses (PRs, run
 > records under `harness/runs/`, review-bot comments). Sections marked _pending_ are filled
 > in as the remaining tickets run.
+>
+> **Status after T3 (PR #12):** the back end for sections 1 and 2 is complete (T1–T3). Sections
+> 1 and 2 are **not** end-to-end complete until the front-end tickets T4 (paged flow) and T5
+> (submit and result) land. Section 3 (stretch) stays out of scope until then (D-14).
 
 ## Decisions
 
