@@ -1,0 +1,49 @@
+[
+  {
+    "loop": "initial",
+    "attempt": 1,
+    "passed": true,
+    "results": [
+      {
+        "gate": "scope",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "protected",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "acceptance",
+        "passed": true,
+        "commands": [
+          {
+            "command": "npm run verify",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23517,
+            "log": "harness/runs/T2-20261006T072615Z/gates-raw/initial-1/cmd-1.log"
+          },
+          {
+            "command": "dotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.QuestionnaireContractInvariantTests\"",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4551,
+            "log": "harness/runs/T2-20261006T072615Z/gates-raw/initial-1/cmd-2.log"
+          }
+        ]
+      },
+      {
+        "gate": "scope",
+        "passed": true,
+        "files": []
+      },
+      {
+        "gate": "protected",
+        "passed": true,
+        "files": []
+      }
+    ]
+  }
+]

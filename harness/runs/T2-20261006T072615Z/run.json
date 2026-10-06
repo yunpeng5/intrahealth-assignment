@@ -1,0 +1,141 @@
+{
+  "runId": "T2-20261006T072615Z",
+  "ticket": {
+    "issue": 2,
+    "id": "T2",
+    "title": "Questionnaire definitions as data, with a read endpoint"
+  },
+  "branch": "ticket/T2-questionnaire-definitions-as-data-with-a",
+  "baseSha": "4b23e0cf46b13c1660cc5dd7c599a8f9955d74f8",
+  "harnessSha": "4b23e0cf46b13c1660cc5dd7c599a8f9955d74f8",
+  "startedAt": "2026-10-06T07:26:15.465Z",
+  "finishedAt": "2026-10-06T07:37:42.382Z",
+  "models": {
+    "maker": "claude-opus-5-5",
+    "reviewer": "claude-fable-5-1"
+  },
+  "config": {
+    "makerModel": "claude-opus-5-5",
+    "reviewerModel": "claude-fable-5-1",
+    "maxAttempts": 3,
+    "maxTurnsPerCall": 60,
+    "callTimeoutMinutes": 20,
+    "reviewRevisionRounds": 1,
+    "feedbackTailLines": 150
+  },
+  "parsed": {
+    "acceptance": [
+      "npm run verify",
+      "dotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.QuestionnaireContractInvariantTests\""
+    ],
+    "allowedPaths": [
+      "backend/**",
+      "docs/architecture.md"
+    ],
+    "pendingTests": [
+      "backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs"
+    ],
+    "protectedChanges": [
+      "backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs"
+    ]
+  },
+  "makerPrompt": "You are the coding agent for ticket T2 in the Pulse Check repository. CLAUDE.md is\nalready in your context: its hard rules apply in full. The ticket below defines your scope.\n\n## How this run works\n\n- You change files. The harness owns git and GitHub: it creates the branch, commits, pushes and\n  opens the PR. Do not commit, push, switch branches or run `gh`; those commands are denied.\n- You may run `npm`, `npx`, `dotnet` and `node`, plus `git status` and `git diff`.\n- When you finish, the harness checks your work with deterministic gates, in this order, and\n  stops at the first failure:\n  1. **Scope:** every changed, deleted or new file (not ignored by `.gitignore`) matches one of\n     the ticket's allowed paths. This includes files created by the commands you run.\n  2. **Protected paths:** no changes to paths in `harness/protected-paths.txt` unless the ticket\n     authorizes exactly those paths.\n  3. **Acceptance commands:** the ticket's `sh` block, one line at a time from the repository\n     root, through the platform shell (cmd.exe). Every command must exit 0.\n  Scope and protected paths are checked again after the acceptance commands.\n- If a gate fails, the harness sends you the failure in this same session so you can fix it.\n  You have 3 attempts in total. Run the acceptance commands yourself before you\n  finish, so the first attempt passes.\n- After the gates pass, a separate review bot reviews the PR against the ticket, the\n  requirements and the decisions. Its blocking findings may come back to you.\n- Your final message is put in the PR description. End with the summary CLAUDE.md asks for:\n  what you changed, which requirement IDs it covers, how you verified it, and open questions.\n\n## The ticket\n\n<ticket>\n# T2: Questionnaire definitions as data, with a read endpoint\n\n## Goal\n\nQuestionnaires are loaded from JSON definition files and served to the browser without any\nscoring data. WC-6 is the first definition.\n\n## Requirements\n\n- 1.1, 1.2 (bands stored as data), 1.3\n- D-1, D-5, D-6, D-7, D-13\n\n## Behaviour\n\n- `wc-6.json` matches the sample in `docs/requirements.md`: title, instructions, pages,\n  prompts, options, values, bands and messages. It uses these IDs (the protected invariant tests\n  rely on them):\n  - Pages: `energy-sleep`, `mood`, `focus`.\n  - Questions: `tired`, `sleep`, `nervous`, `interest`, `concentration`, `piling-up`.\n  - Options: `not-at-all` (0), `several-days` (1), `more-than-half` (2),\n    `nearly-every-day` (3).\n  - Bands: `min`/`max` 0–4, 5–9, 10–14, 15–18 (D-6).\n- The definitions directory is configurable, and the **default configuration serves the shipped\n  `wc-6.json`** (the invariant tests run against the default configuration). At startup, every\n  `*.json` file in the directory is loaded and checked against the rules in D-5 and D-6. An\n  invalid definition stops startup with a message naming the file and the rule it breaks.\n- `GET /api/questionnaires/{id}` behaves exactly as in D-1, including `404` for an unknown ID.\n- The full definition, including values and bands, is available inside the back end for the\n  scoring work in T3. It is never serialized to a response.\n\n**Tests**\n- Integration tests for the endpoint, including `404`.\n- Point the app at a fixture directory holding a second questionnaire with different paging,\n  and show it is served with no code change (1.3).\n- Startup-validation tests: a test per D-5/D-6 rule, showing it rejects a bad definition.\n\n**Promotion (D-12, D-13)**\n- Make the protected pending test class `QuestionnaireContractInvariantTests` pass without\n  changing its assertions, then remove its `[Trait(\"Category\", \"Pending\")]` line. That one-line\n  removal is the only change allowed to that file. Do not change any other protected file.\n\n## Acceptance commands (parsed)\n\n```sh\nnpm run verify\ndotnet test backend/PulseCheck.slnx --nologo --filter \"FullyQualifiedName~PulseCheck.Api.Tests.Invariants.QuestionnaireContractInvariantTests\"\n```\n\n## Pending tests to promote\n\n- `backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs`: all\n  tests in `QuestionnaireContractInvariantTests` (D-1)\n\n## Protected test changes (parsed)\n\n- `backend/tests/PulseCheck.Api.Tests/Invariants/QuestionnaireContractInvariantTests.cs`:\n  remove the `[Trait(\"Category\", \"Pending\")]` line only (promotion). No other change.\n\n## Allowed paths (parsed)\n\n- backend/**\n- docs/architecture.md\n\n## Out of scope\n\n- The submission endpoint and scoring (T3).\n- Any front-end change.\n- A questionnaire list endpoint, authoring tools, admin endpoints, file watching or hot reload.\n- Any change to the other protected invariant files, including `InvariantSupport.cs`.\n\n## Notes for the reviewer\n\n- Verify `wc-6.json` faithfully represents the WC-6 questionnaire data in `docs/requirements.md`.\n- Make sure no DTO or serializer path can leak option values, bands or next-steps messages into\n  the GET response.\n- The diff to `QuestionnaireContractInvariantTests.cs` must be exactly the removal of the\n  `Pending` trait line. Any other change to a protected file is blocking (D-13).\n</ticket>\n",
+  "stopReason": "approved",
+  "prUrl": "https://github.com/yunpeng5/intrahealth-assignment/pull/11",
+  "attempts": [
+    {
+      "loop": "initial",
+      "attempt": 1,
+      "call": "maker-initial-1",
+      "passed": true
+    }
+  ],
+  "reviewRounds": 1,
+  "blockingFindings": [
+    0
+  ],
+  "reviewDiffTruncated": [
+    false
+  ],
+  "diffStats": {
+    "files": 17,
+    "insertions": 960,
+    "deletions": 2
+  },
+  "metrics": {
+    "total": {
+      "costUsd": 2.75607635,
+      "turns": 60,
+      "durationMs": 659872,
+      "inputTokens": 122,
+      "outputTokens": 54731,
+      "cacheReadTokens": 1655360,
+      "cacheCreationTokens": 135370
+    },
+    "maker": {
+      "costUsd": 1.6541646,
+      "turns": 51,
+      "durationMs": 550716,
+      "inputTokens": 56,
+      "outputTokens": 46251,
+      "cacheReadTokens": 1574353,
+      "cacheCreationTokens": 82810
+    },
+    "reviewer": {
+      "costUsd": 1.10191175,
+      "turns": 9,
+      "durationMs": 109156,
+      "inputTokens": 66,
+      "outputTokens": 8480,
+      "cacheReadTokens": 81007,
+      "cacheCreationTokens": 52560
+    }
+  },
+  "toolCallsByType": {
+    "Bash": 18,
+    "Read": 17,
+    "Write": 14,
+    "Edit": 7,
+    "Glob": 1,
+    "StructuredOutput": 1
+  },
+  "firstEditToolCall": 15,
+  "calls": [
+    {
+      "label": "maker-initial-1",
+      "role": "maker",
+      "model": "claude-opus-5-5",
+      "sessionId": "0749ab8f-36b3-48ee-8db4-db08e2dbd7df",
+      "subtype": "success",
+      "metrics": {
+        "costUsd": 1.6541646,
+        "turns": 51,
+        "durationMs": 550716,
+        "inputTokens": 56,
+        "outputTokens": 46251,
+        "cacheReadTokens": 1574353,
+        "cacheCreationTokens": 82810
+      },
+      "toolCalls": 50,
+      "permissionDenials": 5
+    },
+    {
+      "label": "review-1",
+      "role": "reviewer",
+      "model": "claude-fable-5-1",
+      "sessionId": "9d31d065-1a6e-461a-a397-d9983e329693",
+      "subtype": "success",
+      "metrics": {
+        "costUsd": 1.10191175,
+        "turns": 9,
+        "durationMs": 109156,
+        "inputTokens": 66,
+        "outputTokens": 8480,
+        "cacheReadTokens": 81007,
+        "cacheCreationTokens": 52560
+      },
+      "toolCalls": 8,
+      "permissionDenials": 0
+    }
+  ]
+}
