@@ -135,26 +135,37 @@ async function callMaker(r: Run, label: string, prompt: string): Promise<CallRes
   return c;
 }
 
-function gateFeedback(r: Run, g: GateRun, attempt: number): string {
+/** What to tell the maker when its previous call did not end normally; empty after a "success". */
+function cutOffNote(r: Run, subtype: string): string {
+  if (subtype === "success") return "";
+  const why =
+    subtype === "timeout" ? `it was killed after ${r.config.callTimeoutMinutes} minutes`
+    : subtype === "error_max_turns" ? `it hit the limit of ${r.config.maxTurnsPerCall} turns`
+    : `it ended with \`${subtype}\``;
+  return (
+    `Your previous turn was cut off before you finished: ${why}. The gates ran on whatever was ` +
+    "in the tree at that point. Finish the work, and end with a complete summary.\n\n"
+  );
+}
+
+function gateFeedback(r: Run, g: GateRun, attempt: number, makerSubtype: string): string {
   const f = g.failure!;
   const heading = `Gate failed: ${f.gate} (attempt ${attempt} of ${r.config.maxAttempts})`;
   const list = (xs: string[]) => xs.map((x) => `- \`${x}\``).join("\n");
+  let details: string;
+  let instruction: string;
   if (f.gate === "acceptance") {
     const cmd = f.commands!.at(-1)!;
-    return fill(readPrompt("feedback.md"), {
-      heading,
-      details:
-        `\`${f.failedCommand}\` ${cmd.timedOut ? "timed out" : `exited ${cmd.exitCode}`}. ` +
-        `Last ${r.config.feedbackTailLines} lines of its output:\n\n\`\`\`\n${f.tail}\n\`\`\``,
-      instruction: "Find the cause and fix it. Do not weaken, skip or delete tests to make the command pass.",
-    });
+    details =
+      `\`${f.failedCommand}\` ${cmd.timedOut ? "timed out" : `exited ${cmd.exitCode}`}. ` +
+      `Last ${r.config.feedbackTailLines} lines of its output:\n\n\`\`\`\n${f.tail}\n\`\`\``;
+    instruction = "Find the cause and fix it. Do not weaken, skip or delete tests to make the command pass.";
+  } else {
+    const what = f.gate === "scope" ? "outside the ticket's allowed paths" : "protected, and the ticket does not authorize changing them";
+    details = `These files are ${what}:\n\n${list(f.files!)}\n\nAllowed paths:\n\n${list(r.ticket.allowedPaths)}`;
+    instruction = `Revert your changes to ${f.files!.map((x) => `\`${x}\``).join(", ")}. Delete any of them you created.`;
   }
-  const what = f.gate === "scope" ? "outside the ticket's allowed paths" : "protected, and the ticket does not authorize changing them";
-  return fill(readPrompt("feedback.md"), {
-    heading,
-    details: `These files are ${what}:\n\n${list(f.files!)}\n\nAllowed paths:\n\n${list(r.ticket.allowedPaths)}`,
-    instruction: `Revert your changes to ${f.files!.map((x) => `\`${x}\``).join(", ")}. Delete any of them you created.`,
-  });
+  return fill(readPrompt("feedback.md"), { heading, details: cutOffNote(r, makerSubtype) + details, instruction });
 }
 
 /**
@@ -195,7 +206,7 @@ async function makeUntilGreen(r: Run, loop: string, firstPrompt: string): Promis
     if (g.signature === previous) return "no-progress";
     if (attempt >= r.config.maxAttempts) return "max-attempts";
     previous = g.signature;
-    prompt = gateFeedback(r, g, attempt);
+    prompt = gateFeedback(r, g, attempt, call.subtype);
     r.writeFeedback(prompt);
   }
 }
