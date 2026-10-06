@@ -42,7 +42,7 @@ interface CallRecord {
 class Run {
   calls: CallRecord[] = [];
   attempts: AttemptRecord[] = [];
-  gates: (GateRun & { loop: string; attempt: number })[] = [];
+  gates: (ReturnType<typeof excerpt> & { loop: string; attempt: number })[] = [];
   reviews: Review[] = [];
   trace: string[] = [];
   toolCallsByType: Record<string, number> = {};
@@ -206,17 +206,18 @@ function branchName(t: Ticket): string {
 
 function gatesSummary(r: Run): string {
   const rows = r.gates.map((g) => {
+    const last = g.results.at(-1)!;
     let detail: string;
     if (g.passed) {
       const acc = g.results.find((x) => x.gate === "acceptance");
       detail = `scope, protected paths and ${acc?.commands?.length ?? 0} acceptance command(s) passed`;
-    } else if (g.failure!.gate === "acceptance") {
-      const c = g.failure!.commands!.at(-1)!;
+    } else if (last.gate === "acceptance") {
+      const c = last.commands!.at(-1)!;
       detail = `\`${c.command}\` ${c.timedOut ? "timed out" : `exited ${c.exitCode}`}`;
     } else {
-      detail = g.failure!.files!.map((f) => `\`${f}\``).join(", ");
+      detail = last.files!.map((f) => `\`${f}\``).join(", ");
     }
-    return `| ${g.loop} | ${g.attempt} | ${g.passed ? "passed" : `failed: ${g.failure!.gate}`} | ${detail} |`;
+    return `| ${g.loop} | ${g.attempt} | ${g.passed ? "passed" : `failed: ${last.gate}`} | ${detail} |`;
   });
   return ["| Loop | Attempt | Result | Detail |", "|---|---|---|---|", ...rows].join("\n");
 }

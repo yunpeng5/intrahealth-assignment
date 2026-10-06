@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { posix, resolve } from "node:path";
-import { HARNESS_DIR } from "./config.ts";
+import { HARNESS_DIR, repoPath } from "./config.ts";
 import { changedFiles } from "./git.ts";
 import { runShell } from "./proc.ts";
 import type { Ticket } from "./ticket.ts";
@@ -88,7 +88,7 @@ export async function runGates(opts: {
     const r = await runShell(command, opts.timeoutMs);
     const log = resolve(opts.rawDir, `cmd-${i + 1}.log`);
     writeFileSync(log, `$ ${command}\n${r.output}\n[exit ${r.exitCode}${r.timedOut ? ", timed out" : ""}]\n`);
-    acceptance.commands!.push({ command, exitCode: r.exitCode, timedOut: r.timedOut, durationMs: r.durationMs, log: posix.basename(log) });
+    acceptance.commands!.push({ command, exitCode: r.exitCode, timedOut: r.timedOut, durationMs: r.durationMs, log: repoPath(log) });
     if (r.exitCode !== 0 || r.timedOut) {
       acceptance.passed = false;
       acceptance.failedCommand = command;
@@ -106,10 +106,10 @@ export function tail(text: string, lines: number): string {
   return text.replace(/\r\n/g, "\n").trimEnd().split("\n").slice(-lines).join("\n");
 }
 
-/** Copy of a gate run with output tails cut down, for gates.json. */
-export function excerpt(run: GateRun): GateRun {
+/** A gate run for gates.json: output tails cut down; the failure, if any, is the last result. */
+export function excerpt(run: GateRun): Omit<GateRun, "failure"> {
   const cut = (r: GateResult): GateResult => (r.tail ? { ...r, tail: tail(r.tail, EXCERPT_LINES) } : r);
-  return { ...run, results: run.results.map(cut), failure: run.failure && cut(run.failure) };
+  return { passed: run.passed, signature: run.signature, results: run.results.map(cut) };
 }
 
 function signature(r: GateResult): string {
