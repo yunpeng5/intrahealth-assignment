@@ -168,20 +168,43 @@ Outputs: `harness/runs/<run-id>/review-*.md` for ticket PRs, and
 [docs/process/reviews/](docs/process/reviews/) for the three PRs reviewed with the standalone
 command.
 
-**Summary**
-- **Caught:** its most valuable catch was in T4. The questionnaire flow was built and fully
-  tested but never mounted in the app, so a visitor could not reach it. The gates passed; the
-  reviewer blocked it, and the revision fixed it with no human involved. On the invariant tests
-  it found real gaps, including two false-positive risks that my own leak spike could not show.
-- **Missed:** that the root `package-lock.json` was not excluded from its own review diff
-  (found in design review), and a score range added as text to a response (found while
-  checking its findings).
-- **Wrong or partly wrong:** twice it said the WC-6 IDs were defined nowhere (they are in Issue
-  #2, which it cannot see); it suggested skipping `bin` in the file check, which would have
-  hidden the likeliest leak location; and it suggested widening a technology denylist that I
-  chose to remove instead.
-- **Passes vary:** a second pass on the same PR found issues the first had not raised. A bot
-  pass is a strong check, not a replacement for a human merge review.
+**How severity relates to the verdict.** Each finding is `blocking`, `should-fix` or `nit`.
+`blocking` means the PR breaks a requirement, decision, invariant, the ticket's scope or a hard
+rule, or has a correctness bug. `should-fix` is a real problem that breaks none of those, and
+`nit` is minor. The verdict is `request-changes` **if and only if** there is at least one
+blocking finding; the harness rejects any review that breaks this rule. So "1 should-fix,
+verdict approve" is consistent: nothing blocks the merge. Only blocking findings go back to the
+maker automatically; should-fix and nit findings are advice for the human, who either fixed
+them in a fix round (PRs #7 and #9) or recorded them as known debt (T1, T4, T5).
+
+**Caught.** Its most valuable catch was in T4: the questionnaire flow was built and fully
+tested but never mounted in the app, so a visitor could not reach it. The gates passed; the
+reviewer blocked it, the resumed maker fixed it, and round 2 approved, with no human involved.
+On the invariant tests it found real gaps, including two false-positive risks (startup log
+lines and stack traces matching the score check; a read-only `FileStream` failing the source
+scan) that my own leak spike could not show. Both were fixed before the tests were protected.
+
+**Missed.** "Design review" below means the review of each PR by me and the AI design
+assistant, against the design documents, before merge.
+
+| Missed | Who found it | How it was fixed |
+|---|---|---|
+| PR #7: the review diff excluded nested `package-lock.json` files but not the root one (`**/package-lock.json` needs a folder in front), while the note to the reviewer said all lock files were excluded | Design review, while checking whether the diff exclusions created a blind spot; confirmed with a small git experiment | The coding agent's fix round on PR #7 added the root pattern, and the rendered review now states when the diff was truncated |
+| PR #9: a score range added as text (`"nextSteps": "10 to 14: ..."`) passed every invariant check | Design review, while checking whether the fixed-score checks could miss a real leak | The test now asserts the exact expected `{ label, nextSteps }` for a known answer set; a deliberate leak of this kind now fails. I rejected the first proposed fix, "no digits in the response", as an invented product constraint |
+| PR #10: narrowing the source scan made a comment in another protected file (`NoServerStateInvariantTests.cs`) stale; the file was not in the diff | Design review of T3, three PRs later; I had missed it too | Not fixed: it is a protected file, so it needs an authorizing ticket. Recorded as known debt |
+
+**Wrong or partly wrong.**
+
+| Finding | Who spotted the problem | Outcome |
+|---|---|---|
+| PR #9, both passes: the WC-6 question IDs the tests rely on are "defined nowhere" | Design review: the IDs are in Issue #2 (the T2 ticket), which the bot cannot see; it reads only the repo and its prompt | The literal claim was ignored, but it pointed at a real gap: the tests silently assumed the default configuration serves WC-6 with those IDs. That contract is now written in the invariant tests' README and in T2's ticket |
+| PR #9: skip `bin`/`obj` in the file-write check to avoid false failures from a concurrent build | Design review: the test output folder is a `bin` folder and the likeliest place for a leak (the leak spike wrote exactly there) | Not adopted; the build-race risk is documented as a limitation instead |
+| PR #10: widen a Redis pattern that a Redis output cache slipped past | Me: the pattern banned a technology, not visitor state, which is the over-constraint we had just removed | Not adopted. The scan was narrowed further to what maps directly to the requirements (file writes, databases, sessions, cookies); the rest is left to review |
+| PR #7, pass 2: its evidence cited a README use case that does not apply | Design review | The underlying issue (standalone review reads `--ticket-file` before checking out the PR) was real; recorded as known debt |
+
+**Passes vary.** A second pass on the same PR (#7, #9) found issues the first had not raised,
+and the bot repeated one wrong claim across passes. A bot pass is a strong check, not a
+replacement for a human merge review.
 
 | PR | Pass | Verdict | Findings | Caught | Missed / wrong |
 |---|---|---|---|---|---|
